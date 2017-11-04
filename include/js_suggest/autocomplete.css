@@ -1,0 +1,28 @@
+#keyword {
+	width: 300px;
+	font-size: 1em;
+}
+
+#sresults {
+	display: none;	
+	width: 298px;
+	position: absolute;
+	border: 1px solid #c0c0c0;
+	background-color: white;
+	color: black;
+}
+
+#sresults .item {
+	padding: 3px;
+	font-family: Helvetica;
+	border-bottom: 1px solid #c0c0c0;
+}
+
+#sresults .item:last-child {
+	border-bottom: 0px;
+}
+
+#sresults .item:hover {
+	background-color: #f2f2f2;
+	cursor: pointer;
+}
