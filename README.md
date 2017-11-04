@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿# MjolnirThorsHammer
 Thor's Hammer is a PHP Search Engine
 
@@ -29,3 +30,7 @@ To-do:
 
 
 This project is a derivative of Sphider 1.3.6 
+=======
+# MjolnirThorsHammer
+Thor's Hammer is a PHP Search Engine
+>>>>>>> 8e402db7e1a1127dd6794514e0c58260e393924e
