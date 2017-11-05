@@ -1,6 +1,5 @@
+
 # Mjolnir Thor's Hammer
-
-
 
 
 Thor's Hammer is a PHP Search Engine
@@ -16,18 +15,17 @@ that is easy to understand and readable, is fun
 
 and does so in a lean and lightweight manner.
 
-Though small it's to index the massive web and 
+Though small its to index the massive web and 
 
 provide quality search results.  With those 
 
-objectives let’s have some fun.  This project
+objectives let’s have some fun.
 
- is a derivative of Sphider 1.3.6
-
-
+This project is a derivative of Sphider 1.3.6 
 
 To-do:
 
 	JavaScript suggestions
 
 	Negation search criteria
+
