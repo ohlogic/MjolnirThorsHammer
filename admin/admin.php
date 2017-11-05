@@ -509,7 +509,7 @@ function addcatform($parent) {
 
 	function clearLog() {
 		global  $db;
-		$result = pg_query($db, "delete from query_log where time >= 0");
+		$result = pg_query($db, "delete from query_log;");
 		echo pg_last_error($db);
 		$del = pg_affected_rows();
 		?>
