@@ -856,11 +856,12 @@ $www = array();
 
 echo 'NEW PAGE KEYWORDS' . '<br>';
 foreach ($ww as $item) {
-	
+ 
+ $word_in_domain = $item[3];	// in host
+ $word_in_path = $item[4];	
  $word_in_title = $item[5];
- $word_in_domain = $item[3];
- $word_in_path = $item[4];
  $meta_keyword = $item[6];
+ //description
  
 	$word_weight = (int) (calc_weight($item[2], $word_in_title, $word_in_domain, $word_in_path, $path_depth, $meta_keyword));
 	$item[1] = $word_weight;
