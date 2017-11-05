@@ -86,13 +86,13 @@ if (get_magic_quotes_gpc()==1) {
 //}
 
 function saveToLog ($query, $elapsed, $results) {
-        global $eee;
+        global $db;
     if ($results =="") {
         $results = 0;
     }
     $query =  "insert into query_log (query, time, elapsed, results) values ('$query', now(), '$elapsed', '$results')";
-	pg_query($eee, $query);
-	echo pg_last_error($eee);
+	pg_query($db, $query);
+	echo pg_last_error($db);
                         
 }
 
