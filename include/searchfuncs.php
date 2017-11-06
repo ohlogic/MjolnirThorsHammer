@@ -407,7 +407,7 @@ function highlight_text($searchstr, $weight, $title, $url, $description, $domain
 				$url2 = $url;
 				
 				if ($max_weight > 0)
-				$weight = ceil($weight/$max_weight*100)/100;
+				$weight = number_format(($weight/$max_weight*100),2);
 				
 				if ($title=='')
 					$title = $sph_messages["Untitled"];
