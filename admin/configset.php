@@ -99,7 +99,9 @@ if ($_suggest_rows == "") {
  $_suggest_rows = 0;
 }
 
-
+if($_results_per_page == "") {
+	$_results_per_page = 1;
+}
 
 if (isset($Submit)) {
 	if (!is_writable("../settings/conf.php")) {
