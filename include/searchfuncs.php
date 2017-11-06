@@ -138,7 +138,6 @@ function addmarks($a) {
 
 function search($searchstr, $start, $category, $type, $per_page, $domain) {
 	global $length_of_link_desc,
-	$mysqli_table_prefix, 
 	$show_meta_description, 
 	$merge_site_results, 
 	$stem_words, 
@@ -258,10 +257,12 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 				
 				list($weight, $title, $url, $description, $domain, $fulltxt,
 				$size, $url2) = highlight_text($searchstr, $weight, $title, 
-				$url, $description, $domain, $fulltxt, $size);
+				$url, $description, $domain, $fulltxt, $size, 0);	// default max_weight
 
 				
-				
+				$found = negation_word_search($searchstr, $row['description'], $det['fulltxt']);
+
+				if ($found == false)
 				$results[] = array('weight' => $weight, 'title' => $title, 
 				'url' => $url, 'description' => $description, 'domain' => $domain, 
 				'fulltxt' => $fulltxt, 'size' => $size, 'url2' => $url2);			
@@ -317,6 +318,7 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 					$linklist['id'][] = $row[0];
 					$domains[$row[0]] = $row[2];
 					$linklist['weight'][$row[0]] += $row[1];
+					
 				}
 			}
 			
@@ -383,11 +385,12 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 				$url, $description, $domain, $fulltxt, $size, $max_weight);
 
 				
-				
+				$found = negation_word_search($searchstr, $det['description'], $det['fulltxt']);
+
+				if ($found == false)
 				$results[] = array('weight' => $weight, 'title' => $title, 
 				'url' => $url, 'description' => $description, 'domain' => $domain, 
 				'fulltxt' => $fulltxt, 'size' => $size, 'url2' => $url2);
-				
 				
 			}
 		}
@@ -400,6 +403,24 @@ $end = getmicrotime()- $starttime;
 }
 
 
+
+function negation_word_search($searchstr, $description, $fulltxt) {
+						
+	if (count($searchstr['-']) > 0)
+	foreach( $searchstr['-'] as $findit) {
+		
+		if (trim($findit) == '')
+			continue;
+		
+			$pos = strpos(strtolower($description), $findit);
+			$pos2 = strpos(strtolower($fulltxt), $findit);
+			
+			if ($pos === false && $pos2 === false)
+				return false;
+			else 
+				return true;
+	}
+}
 
 
 function highlight_text($searchstr, $weight, $title, $url, $description, $domain, $fulltxt, $size, $max_weight) {
@@ -441,7 +462,6 @@ function get_search_results($query, $start, $category, $searchtype, $results, $d
 	global $sph_messages, $results_per_page,
 		$links_to_next,
 		$show_query_scores,
-		$mysqli_table_prefix,
 		$desc_length;
 
 	//if ($results != "") {
