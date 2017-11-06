@@ -327,8 +327,9 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 		if (count($linklist['id']) > 0)
 		{
 		
+			$max_weight = max($linklist['weight']);
+
 			
-		
 			if (DEBUG) echo '<br>';
 			if (DEBUG) echo '--UNIQUE ID--' . '<br>';
 			$res = array_unique($linklist['id']);
@@ -379,7 +380,7 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 				
 				list($weight, $title, $url, $description, $domain, $fulltxt,
 				$size, $url2) = highlight_text($searchstr, $weight, $title, 
-				$url, $description, $domain, $fulltxt, $size);
+				$url, $description, $domain, $fulltxt, $size, $max_weight);
 
 				
 				
@@ -401,11 +402,13 @@ $end = getmicrotime()- $starttime;
 
 
 
-function highlight_text($searchstr, $weight, $title, $url, $description, $domain, $fulltxt, $size) {
+function highlight_text($searchstr, $weight, $title, $url, $description, $domain, $fulltxt, $size, $max_weight) {
 	
 				$url2 = $url;
 				
-				//$weight = number_format($result[$i]['weight']/$maxweight*100, 2);
+				if ($max_weight > 0)
+				$weight = ceil($weight/$max_weight*100)/100;
+				
 				if ($title=='')
 					$title = $sph_messages["Untitled"];
 				$regs = Array();
