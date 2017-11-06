@@ -26,6 +26,3 @@ This project is a derivative of Sphider 1.3.6
 To-do:
 
 	JavaScript suggestions
-
-	Negation search criteria
-
