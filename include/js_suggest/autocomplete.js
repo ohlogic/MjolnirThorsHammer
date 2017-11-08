@@ -4,7 +4,7 @@ var MIN_LENGTH = 3;
 function suggest($a)
 {
 	$('#keyword').val('');
-    $('#keyword').val($($a).text());
+    $('#keyword').val($($a).text().replace(/"/g,'').split(',')[0]);
 	$('#keyword').focus();
 }
 
@@ -23,8 +23,23 @@ $( document ).ready(function() {
 				data: {'keyword' : keyword},
 				dataType: "json",
 				success: function (data) {
-					//alert(data);
+					
+
+					$('#sresults div').children().each(function(i, ii) {
+						if ($(this).text() == $(ii).text()) {
+							$("#sresults").empty();
+						}
+					});
+					
+					if (data != '')
 					$('#sresults').append('<div class="item" onclick="suggest(this)">' + data + '</div>');
+					
+					if($("#sresults div.item").length >= 10) {
+						$("#sresults:first:visible").hide();
+						$("#sresults").empty();
+					}
+					
+					
 				},
 				error: function (result) {
 					alert("Error");
@@ -42,6 +57,7 @@ $( document ).ready(function() {
     	})
         .focus(function() {
     	    $("#sresults").show();
-    	});
-
+    });
+	
+	
 });

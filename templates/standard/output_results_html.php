@@ -77,7 +77,7 @@
 </center>
 
 
-<?php if ($pagination['total_results']==0){?>
+<?php if ($pagination['total_results']==0 && $ft == 1){?>
 	<div id ="result_report">
 		<?php 
 		$msg = str_replace ('%query', $ent_query, $sph_messages["noMatch"]);
