@@ -40,9 +40,9 @@ if ($suggest_keywords)
 		$result = pg_query($db, $sql = "
 		SELECT keyword, count(keyword) as results 
 		FROM keywords INNER JOIN link_keyword USING (keyword_id) 
-		WHERE keyword LIKE '" . $_GET['keyword'] . "%'  
+		WHERE keyword LIKE '" . $_GET['keyword'] . "%' 
 		GROUP BY keyword 
-		ORDER BY results desc
+		ORDER BY results desc 
 		LIMIT $suggest_rows
 		");
 		if($result && pg_num_rows($result)) {		

@@ -1,0 +1,6 @@
+synonyms table how to
+---------------------
+
+Within pgAdminIII open an execute arbitrary sql
+queries window, then go to file, open, and 
+open the synonyms.sql file.

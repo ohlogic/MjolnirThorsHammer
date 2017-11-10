@@ -4,7 +4,7 @@ var MIN_LENGTH = 3;
 function suggest($a)
 {
 	$('#keyword').val('');
-    $('#keyword').val($($a).text().replace(/"/g,'').split(',')[0]);
+	$('#keyword').val($($a).text().replace(/"/g,'').split(',')[0]);
 	$('#keyword').focus();
 }
 
@@ -52,12 +52,12 @@ $( document ).ready(function() {
 		}
 	});
 
-    $("#keyword").blur(function(){
-    		$("#sresults").fadeOut(500);
-    	})
-        .focus(function() {
-    	    $("#sresults").show();
-    });
+	$("#keyword").blur(function(){
+			$("#sresults").fadeOut(500);
+		})
+		.focus(function() {
+			$("#sresults").show();
+	});
 	
 	
 });
