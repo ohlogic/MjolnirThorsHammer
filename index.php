@@ -43,6 +43,7 @@ $language_dir = "./languages";
 require_once("$settings_dir/database.php");
 
 require_once ("$include_dir/SpellCorrector.php");
+require_once ("$include_dir/pstem_class.php");
 
 require_once("$include_dir/searchfuncs.php");
 

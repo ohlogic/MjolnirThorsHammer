@@ -49,9 +49,9 @@ error_reporting(E_ALL ^ E_NOTICE);
 					
 				if (!ignoreWord(substr($words[$k], 1))) {
 					$returnWords['hilight'][] = substr($words[$k], 1);
-					//if ($stem_words == 1) {
-					//	$returnWords['hilight'][] = stem(substr($words[$k], 1));	// stem algorithm is about what?
-					//}
+					if ($stem_words == 1) {
+						$returnWords['hilight'][] = PorterStemmer::Stem(substr($words[$k], 1));
+					}
 				}
 				
 			} else if (substr($words[$k], 0, 1) == '-') {
@@ -68,9 +68,9 @@ error_reporting(E_ALL ^ E_NOTICE);
 				
 				if (!ignoreWord($words[$k])) {
 					$returnWords['hilight'][] = $words[$k];
-					//if ($stem_words == 1) {
-					//	$returnWords['hilight'][] = stem($words[$k]);
-					//}
+					if ($stem_words == 1) {
+						$returnWords['hilight'][] = PorterStemmer::Stem($words[$k]);
+					}
 				}
 			}
 			$k++;
@@ -186,6 +186,15 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 
 			}
 			
+			echo '<br><br>';
+			echo '[ highlight ]' . '<br>';
+			if ( count($searchstr['hilight']) > 0)
+			foreach($searchstr['hilight'] as $str){
+				echo $str .'<br>';
+			}
+			
+			
+			
 			echo '<br>';
 	}
 	
@@ -230,8 +239,6 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 
 		echo 'PHRASE SEARCH' . '<br>';
 		while ($row = pg_fetch_assoc($result)) {
-		
-			//$phraselist[$phrase_words]['id'][$row[0]] = 1;
 			
 			echo $row['title'].' ' . $row['url'].' '. $row['description'] . '<br>'; 
 			
@@ -384,7 +391,6 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 				$size, $url2) = highlight_text($searchstr, $weight, $title, 
 				$url, $description, $domain, $fulltxt, $size, $max_weight);
 
-				
 				$found = negation_word_search($searchstr, $det['description'], $det['fulltxt']);
 
 				if ($found == false)
@@ -395,7 +401,7 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 			}
 		}
 
-$end = getmicrotime()- $starttime;
+	$end = getmicrotime()- $starttime;
 
 	//echo $end . '<br>';
 	
@@ -425,33 +431,33 @@ function negation_word_search($searchstr, $description, $fulltxt) {
 
 function highlight_text($searchstr, $weight, $title, $url, $description, $domain, $fulltxt, $size, $max_weight) {
 	
-				$url2 = $url;
-				
-				if ($max_weight > 0)
-				$weight = number_format(($weight/$max_weight*100),2);
-				
-				if ($title=='')
-					$title = $sph_messages["Untitled"];
-				$regs = Array();
+	$url2 = $url;
+	
+	if ($max_weight > 0)
+	$weight = number_format(($weight/$max_weight*100),2);
+	
+	if ($title=='')
+		$title = $sph_messages["Untitled"];
+	$regs = Array();
 
-				if (strlen($title) > 80) {
-					$title = substr($title, 0,76)."...";
-				}
-				
-				if ($searchstr['hilight'] > 0)
-				foreach($searchstr['hilight'] as $change) {
-					while (preg_match("/[^\>](".$change.")[^\<]/i", " ".$title." ", $regs)) {
-						$title = preg_replace("/".$regs[1]."/i", "<b>".$regs[1]."</b>", $title);
-					}
+	if (strlen($title) > 80) {
+		$title = substr($title, 0,76)."...";
+	}
+	
+	if ($searchstr['hilight'] > 0)
+	foreach($searchstr['hilight'] as $change) {
+		while (preg_match("/[^\>](".$change.")[^\<]/i", " ".$title." ", $regs)) {
+			$title = preg_replace("/".$regs[1]."/i", "<b>".$regs[1]."</b>", $title);
+		}
 
-					while (preg_match("/[^\>](".$change.")[^\<]/i", " ".$fulltxt." ", $regs)) {
-						$fulltxt = preg_replace("/".$regs[1]."/i", "<b>".$regs[1]."</b>", $fulltxt);
-					}
-					
-					while (preg_match("/[^\>](".$change.")[^\<]/i", $url2, $regs)) {
-						$url2 = preg_replace("/".$regs[1]."/i", "<b>".$regs[1]."</b>", $url2);
-					}
-				}
+		while (preg_match("/[^\>](".$change.")[^\<]/i", " ".$fulltxt." ", $regs)) {
+			$fulltxt = preg_replace("/".$regs[1]."/i", "<b>".$regs[1]."</b>", $fulltxt);
+		}
+		
+		while (preg_match("/[^\>](".$change.")[^\<]/i", $url2, $regs)) {
+			$url2 = preg_replace("/".$regs[1]."/i", "<b>".$regs[1]."</b>", $url2);
+		}
+	}
 	
 	return array($weight, $title, $url, $description, $domain, $fulltxt, $size, $url2);
 }
@@ -482,16 +488,12 @@ function get_search_results($query, $start, $category, $searchtype, $results, $d
 
 	$words = makeboollist($query);	// does nothing right now
 	
-	//$ignorewords = $words['ignore'];						I don't think this is needed
-	//$full_result['ignore_words'] = $words['ignore'];		I don't think this is needed
-	//
-	//
+	
 	// $words equals the following arrays
 	// 
 	// $searchstr['+'];	// included
 	// $searchstr['-'];	// not included
 	// $searchstr['+s']	// search phrase
-	
 	
 	$results =  search($words, $start, $category, $searchtype, $results_per_page, $domain);
 	
@@ -551,7 +553,6 @@ function get_search_results($query, $start, $category, $searchtype, $results, $d
 			$pagination['other_pages'][] = $x;
 
 	}
-
 	
 	return array($results, $pagination);	// similar to tuple 
 }
@@ -562,15 +563,15 @@ function get_details($id) {
 	
 	$sql = "SELECT link_id, title, url, description, fulltxt, size FROM links where link_id = $id;";
 	
-	$rrr = pg_query($db, $sql);	// returns array
+	$res = pg_query($db, $sql);	// returns array
 	echo pg_last_error($db);
 	
-	if ($rrr == NULL) {
+	if ($res == NULL) {
 		echo 'it is NULL__get_details' .'<br>';
 	} else {
-		$num_rows = pg_num_rows($rrr);
+		$num_rows = pg_num_rows($res);
 		if ($num_rows > 0)
-			return $rrr;
+			return $res;
 	}
 }
 
@@ -580,18 +581,16 @@ function get_domain($link_id) {
 	
 	$sql = "SELECT link_keyword.domain, domains.domain as domain FROM link_keyword, domains WHERE link_keyword.link_id = $link_id and domains.domain_id = link_keyword.domain";
 	
-	$rrr = pg_query($db, $sql);	// returns array
+	$res = pg_query($db, $sql);	// returns array
 	echo pg_last_error($db);
 	
-	if ($rrr == NULL) {
+	if ($res == NULL) {
 		echo 'it is NULL__get_domain' .'<br>';
 	} else {
-		$num_rows = pg_num_rows($rrr);
+		$num_rows = pg_num_rows($res);
 		if ($num_rows > 0)
-			return $rrr;
+			return $res;
 	}
 }
-
-
 
 ?>
