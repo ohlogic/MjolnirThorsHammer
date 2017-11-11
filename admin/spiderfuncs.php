@@ -33,7 +33,6 @@ function getFileContents($url) {
 		$target = $host;
 	}
 
-
 	$errno = 0;
 	$errstr = "";
 	$fp = @ fsockopen($target, $port, $errno, $errstr, $fsocket_timeout);
@@ -253,8 +252,6 @@ function remove_file_from_url($url) {
 Extract links from html
 */
 function get_links($file, $url, $can_leave_domain, $base) {
-
-	//$chunklist = array ();
     
 	// The base URL comes from either the meta tag or the current URL.
     if (!empty($base)) {
@@ -262,16 +259,9 @@ function get_links($file, $url, $can_leave_domain, $base) {
     }
 
 	$links = array ();
-	//$regs = Array ();
-	//$checked_urls = Array();
 
-	
-	
-	
-	
-	
 	// Create DOM from URL or file
-	$html = file_get_html($url);	// file receives error therefore url
+	$html = file_get_html($url);
 
 	// Find all images
 	foreach($html->find('img') as $element) {
@@ -289,65 +279,6 @@ function get_links($file, $url, $can_leave_domain, $base) {
 		$links[] = $a;	
 	}
 
-	
-	
-	
-	
-	/*
-
-	// original added blank apostraphe and dollar sign
-	preg_match_all("/href\s*=\s*[\'\"]?([+:%\/\?~=&;\\\(\),._a-zA-Z0-9-\'[:blank:]$]*)(#[.a-zA-Z0-9-]*)?[\'\" ]?(\s*rel\s*=\s*[\'\"]?(nofollow)[\'\"]?)?/i", $file, $regs, PREG_SET_ORDER);
-	foreach ($regs as $val) {
-		if ($checked_urls[$val[1]]!=1 && !isset ($val[4])) { //if nofollow is not set
-			if (($a = url_purify($val[1], $url, $can_leave_domain)) != '') {
-				$links[] = $a;
-			}
-			$checked_urls[$val[1]] = 1;
-		}
-	}
-	
-	preg_match_all("/(frame[^>]*src[[:blank:]]*)=[[:blank:]]*[\'\"]?(([[a-z]{3,5}:\/\/(([.a-zA-Z0-9-])+(:[0-9]+)*))*([+:%\/?=&;\\\(\),._ a-zA-Z0-9-]*))(#[.a-zA-Z0-9-]*)?[\'\" ]?/i", $file, $regs, PREG_SET_ORDER);
-	foreach ($regs as $val) {
-		if ($checked_urls[$val[1]]!=1 && !isset ($val[4])) { //if nofollow is not set
-			if (($a = url_purify($val[1], $url, $can_leave_domain)) != '') {
-				$links[] = $a;
-			}
-			$checked_urls[$val[1]] = 1;
-		}
-	}
-	preg_match_all("/(window[.]location)[[:blank:]]*=[[:blank:]]*[\'\"]?(([[a-z]{3,5}:\/\/(([.a-zA-Z0-9-])+(:[0-9]+)*))*([+:%\/?=&;\\\(\),._ a-zA-Z0-9-]*))(#[.a-zA-Z0-9-]*)?[\'\" ]?/i", $file, $regs, PREG_SET_ORDER);
-	foreach ($regs as $val) {
-		if ($checked_urls[$val[1]]!=1 && !isset ($val[4])) { //if nofollow is not set
-			if (($a = url_purify($val[1], $url, $can_leave_domain)) != '') {
-				$links[] = $a;
-			}
-			$checked_urls[$val[1]] = 1;
-		}
-	}
-	preg_match_all("/(http-equiv=['\"]refresh['\"] *content=['\"][0-9]+;url)[[:blank:]]*=[[:blank:]]*[\'\"]?(([[a-z]{3,5}:\/\/(([.a-zA-Z0-9-])+(:[0-9]+)*))*([+:%\/?=&;\\\(\),._ a-zA-Z0-9-]*))(#[.a-zA-Z0-9-]*)?[\'\" ]?/i", $file, $regs, PREG_SET_ORDER);
-	foreach ($regs as $val) {
-		if ($checked_urls[$val[1]]!=1 && !isset ($val[4])) { //if nofollow is not set
-			if (($a = url_purify($val[1], $url, $can_leave_domain)) != '') {
-				$links[] = $a;
-			}
-			$checked_urls[$val[1]] = 1;
-		}
-	}
-
-	preg_match_all("/(window[.]open[[:blank:]]*[(])[[:blank:]]*[\'\"]?(([[a-z]{3,5}:\/\/(([.a-zA-Z0-9-])+(:[0-9]+)*))*([+:%\/?=&;\\\(\),._ a-zA-Z0-9-]*))(#[.a-zA-Z0-9-]*)?[\'\" ]?/i", $file, $regs, PREG_SET_ORDER);
-	foreach ($regs as $val) {
-		if ($checked_urls[$val[1]]!=1 && !isset ($val[4])) { //if nofollow is not set
-			if (($a = url_purify($val[1], $url, $can_leave_domain)) != '') {
-				$links[] = $a;
-			}
-			$checked_urls[$val[1]] = 1;
-		}
-	}
-
-	
-	*/
-	
-	
 	return $links;
 }
 
@@ -417,13 +348,11 @@ Checks if url is legal, relative to the main url.
 function url_purify($url, $parent_url, $can_leave_domain) {
 	global $ext, $mainurl, $apache_indexes, $strip_sessids;
 
-
-	if (substr($url, 0, 4) == 'http') {													// code I added 
+	if (substr($url, 0, 4) == 'http') {
 		return str_replace( '"', "&#34;",    str_replace("'", "&apos;", $url )	);							
 	}											
 	
 	$urlparts = parse_url( 	addcslashes(	 str_replace( '"', "&#34;",    str_replace("'", "&apos;", $url )	)	)	);
-
 	
 	$main_url_parts = parse_url($mainurl);
 	if ($urlparts['host'] != "" && $urlparts['host'] != $main_url_parts['host']  && $can_leave_domain != 1) {
@@ -438,8 +367,6 @@ function url_purify($url, $parent_url, $can_leave_domain) {
 	if (substr($url, -1) == '\\') {
 		return '';
 	}
-
-
 
 	if (isset($urlparts['query'])) {
 		if ($apache_indexes[$urlparts['query']]) {
@@ -456,7 +383,6 @@ function url_purify($url, $parent_url, $can_leave_domain) {
 		$scheme ="";
 	}
 	
-		
 	//only http and https links are followed
 	if (!($scheme == 'http' || $scheme == '' || $scheme == 'https')) {
 		return '';
@@ -520,7 +446,7 @@ function url_purify($url, $parent_url, $can_leave_domain) {
 
 
 function save_keywords($wordarray, $link_id, $domain) {
-	global $mysqli_table_prefix, $all_keywords;
+	global $all_keywords;
 	global $db;
 	reset($wordarray);
 	
@@ -535,9 +461,7 @@ function save_keywords($wordarray, $link_id, $domain) {
 				$insert_row = pg_fetch_row($result);
 				$keyword_id = $insert_row[0];
 				
-				
 				$all_keywords[] = $word;
-				
 				
 				$sql = "insert into link_keyword (link_id, keyword_id, weight, domain) values ($link_id, $keyword_id, $weight, $domain)";
 				pg_query($db, $sql);
@@ -547,49 +471,8 @@ function save_keywords($wordarray, $link_id, $domain) {
 			else {
 				echo 'already have the keyword='. $word . '<br>';
 			}
-		
-		}
-		
-	}
-	
-	
-	/*
-	
-	while ($thisword = each($wordarray)) {
-		$word = $thisword[1][1];
-		$wordmd5 = substr(md5($word), 0, 1);
-		$weight = $thisword[1][2];
-		if (strlen($word)<= 30) {
-			$keyword_id = $all_keywords[$word];
-			if ($keyword_id  == "") {
-                mysqli_query($db, "insert into keywords (keyword) values ('$word')");
-				if (mysqli_errno() == 1062) {	//duplicate key entry
-					$result = mysqli_query($db, "select keyword_ID from keywords where keyword='$word'");
-					echo mysqli_error();
-					$row = mysqli_fetch_row($result);
-					$keyword_id = $row[0];
-				} else{
-				$keyword_id = mysqli_insert_id();
-				$all_keywords[$word] = $keyword_id;
-				echo mysqli_error();
-			} 
-			} 
-			$inserts[$wordmd5] .= ",($link_id, $keyword_id, $weight, $domain)"; 
 		}
 	}
-
-	for ($i=0;$i<=15; $i++) {
-		$char = dechex($i);
-		$values= substr($inserts[$char], 1);
-		if ($values!="") {
-			$query = "insert into link_keyword (link_id, keyword_id, weight, domain) values $values";
-			mysqli_query($db, $query);
-			echo mysqli_error();
-		}
-	}
-	
-	
-	*/
 	
 }
 
@@ -647,9 +530,6 @@ function get_head_data($file) {
 }
 
 function clean_file($file, $url, $type) {
-	
-echo 'cleaning file ' . '<br>';	
-	
 	global $entities, $index_host, $index_meta_keywords;
 
 	$urlparts = parse_url($url);
@@ -686,7 +566,6 @@ echo 'cleaning file ' . '<br>';
 		$file = $file." ".$headdata['keywords'];
 	}
 	
-	
 	//replace codes with ascii chars
 	$file = preg_replace('~&#x([0-9a-f]+);~ei', 'chr(hexdec("\\1"))', $file);
     $file = preg_replace('~&#([0-9]+);~e', 'chr("\\1")', $file);
@@ -722,165 +601,106 @@ function calc_weights($wordarray, $title, $host, $path, $keywords, $desc) {
 	$descarray = unique_array(explode(" ", preg_replace("/[^[:alnum:]-]+/i", " ", strtolower($desc))));
 	$path_depth = countSubstrs($path, "/");
 
-$w = array();	
-$ww = array();
+	$w = array();	
+	$ww = array();
 
-$word_weight = 0;
-$word_occurence = 0;
+	$word_weight = 0;
+	$word_occurence = 0;
 
-echo 'host array=' . '<br>';
-foreach($hostarray as $item) {
-	
-	echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
-	
-	$word_occurence = $item[2];
-	
-	if (!in_array($item[1], $w)) {
-		$w[] = $item[1];
-		$ww[] = array($item[1], $word_weight, $word_occurence, 1, 0, 0, 0, 0);
+	echo 'host array=' . '<br>';
+	foreach($hostarray as $item) {
+		
+		echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
+		
+		$word_occurence = $item[2];
+		
+		if (!in_array($item[1], $w)) {
+			$w[] = $item[1];
+			$ww[] = array($item[1], $word_weight, $word_occurence, 1, 0, 0, 0, 0);
+		}
 	}
-}
 
-echo 'path array=' . '<br>';
-foreach($patharray as $item) {
-	
-	echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
-	
-	$word_occurence = $item[2];
-	
-	if (!in_array($item[1], $w)) {
-		$w[] = $item[1];
-		$ww[] = array($item[1], $word_weight, $word_occurence, 0, 1, 0, 0, 0);
-	}	
-	
-}
-
-echo 'title array=' . '<br>';
-foreach($titlearray as $item) {
-
-	echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
-	
-	$word_occurence = $item[2];
-	
-	if (!in_array($item[1], $w)) {
-		$w[] = $item[1];
-		$ww[] = array($item[1], $word_weight, $word_occurence, 0, 0, 1, 0, 0);
-	}	
-	
-}
-
-echo 'keywords array= ' . '<br>';
-foreach($keywordsarray as $item) {
-
-	echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
-	
-	$word_occurence = $item[2];
-	
-	if (!in_array($item[1], $w)) {
-		$w[] = $item[1];
-		$ww[] = array($item[1], $word_weight, $word_occurence, 0, 0, 0, 1, 0);
-	}	
-	
-}
-
-echo 'desc array= ' . '<br>';
-foreach($descarray as $item) {
-
-	echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
-	
-	$word_occurence = $item[2];
-	
-	if (!in_array($item[1], $w)) {
-		$w[] = $item[1];
-		$ww[] = array($item[1], $word_weight, $word_occurence, 0, 0, 0, 0, 1);
-	}	
-	
-	
-}
-
-echo 'path depth=' . $path_depth . '<br>';	
-	
-
-
-	/*
-	while (list ($wid, $word) = each($wordarray)) {
-		$word_in_path = 0;
-		$word_in_domain = 0;
-		$word_in_title = 0;
-		$meta_keyword = 0;
-		if ($index_host == 1) {
-			while (list ($id, $path) = each($patharray)) {
-				if ($path[1] == $word[1]) {
-					$word_in_path = 1;
-					break;
-				}
-			}
-			reset($patharray);
-
-			while (list ($id, $host) = each($hostarray)) {
-				if ($host[1] == $word[1]) {
-					$word_in_domain = 1;
-					break;
-				}
-			}
-			reset($hostarray);
-		}
-
-		if ($index_meta_keywords == 1) {
-			while (list ($id, $keyword) = each($keywordsarray)) {
-				if ($keyword[1] == $word[1]) {
-					$meta_keyword = 1;
-					break;
-				}
-			}
-			reset($keywordsarray);
-		}
-		while (list ($id, $tit) = each($titlearray)) {
-			if ($tit[1] == $word[1]) {
-				$word_in_title = 1;
-				break;
-			}
-		}
-		reset($titlearray);
-
-		$wordarray[$wid][2] = (int) (calc_weight($wordarray[$wid][2], $word_in_title, $word_in_domain, $word_in_path, $path_depth, $meta_keyword));
+	echo 'path array=' . '<br>';
+	foreach($patharray as $item) {
+		
+		echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
+		
+		$word_occurence = $item[2];
+		
+		if (!in_array($item[1], $w)) {
+			$w[] = $item[1];
+			$ww[] = array($item[1], $word_weight, $word_occurence, 0, 1, 0, 0, 0);
+		}	
 	}
-	reset($wordarray);
-	*/
-	
-	
-reset($ww);
+
+	echo 'title array=' . '<br>';
+	foreach($titlearray as $item) {
+
+		echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
+		
+		$word_occurence = $item[2];
+		
+		if (!in_array($item[1], $w)) {
+			$w[] = $item[1];
+			$ww[] = array($item[1], $word_weight, $word_occurence, 0, 0, 1, 0, 0);
+		}	
+	}
+
+	echo 'keywords array= ' . '<br>';
+	foreach($keywordsarray as $item) {
+
+		echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
+		
+		$word_occurence = $item[2];
+		
+		if (!in_array($item[1], $w)) {
+			$w[] = $item[1];
+			$ww[] = array($item[1], $word_weight, $word_occurence, 0, 0, 0, 1, 0);
+		}	
+	}
+
+	echo 'desc array= ' . '<br>';
+	foreach($descarray as $item) {
+
+		echo 'ITEM= '. $item[1] . ', COUNT=' . $item[2]. '<br>';
+		
+		$word_occurence = $item[2];
+		
+		if (!in_array($item[1], $w)) {
+			$w[] = $item[1];
+			$ww[] = array($item[1], $word_weight, $word_occurence, 0, 0, 0, 0, 1);
+		}	
+	}
+
+	echo 'path depth=' . $path_depth . '<br>';	
+
+		
+	reset($ww);
+
+	$www = array();
+
+	echo 'NEW PAGE KEYWORDS' . '<br>';
+	foreach ($ww as $item) {
+	 
+		$word_in_domain = $item[3];	// in host
+		$word_in_path = $item[4];	
+		$word_in_title = $item[5];
+		$meta_keyword = $item[6];
+		//description
+
+		$word_weight = (int) (calc_weight($item[2], $word_in_title, $word_in_domain, $word_in_path, $path_depth, $meta_keyword));
+		$item[1] = $word_weight;
+
+		echo 'LINE: word=' . $item[0] .' weight='. $item[1] .
+		' word in title='. $item[5] . ' word in domain=' . $item[3] . ' word_in_path=' . $item[4] . 'path depth=' . $path_depth . 'word in meta keyword=' .  $item[6]. '<br>';
 
 
-$www = array();
-
-echo 'NEW PAGE KEYWORDS' . '<br>';
-foreach ($ww as $item) {
- 
- $word_in_domain = $item[3];	// in host
- $word_in_path = $item[4];	
- $word_in_title = $item[5];
- $meta_keyword = $item[6];
- //description
- 
-	$word_weight = (int) (calc_weight($item[2], $word_in_title, $word_in_domain, $word_in_path, $path_depth, $meta_keyword));
-	$item[1] = $word_weight;
-	
-echo 'LINE: word=' . $item[0] .' weight='. $item[1] .
-' word in title='. $item[5] . ' word in domain=' . $item[3] . ' word_in_path=' . $item[4] . 'path depth=' . $path_depth . 'word in meta keyword=' .  $item[6]. '<br>';
-
-
-$www[] = array($item[0], $item[1]);
-
-}	
-	
-
+		$www[] = array($item[0], $item[1]);
+	}	
+		
+		
 	return $www;
-	
-	
-	//return $wordarray;
 }
-
 
 //function to calculate the weight of pages
 function calc_weight ($words_in_page, $word_in_title, $word_in_domain, $word_in_path, $path_depth, $meta_keyword) {
@@ -891,7 +711,6 @@ function calc_weight ($words_in_page, $word_in_title, $word_in_domain, $word_in_
 
 	return $weight;
 }
-
 
 function isDuplicateMD5($md5sum) {
 	global $db;
@@ -1017,8 +836,6 @@ function extract_text($contents, $source_type) {
 	return implode(' ', $result); 
 
 }
-
-
 
 function  remove_sessid($url) {
 		return preg_replace("/(\?|&)(PHPSESSID|JSESSIONID|ASPSESSIONID|sid)=[0-9a-zA-Z]+$/", "", $url);

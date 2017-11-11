@@ -280,7 +280,6 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 	echo 'base:' . $data['base'] . '<br>';
 	
 	
-	
 				if ($data['noindex'] == 1) {
 					$OKtoIndex = 0;
 					$deletable = 1;
@@ -293,32 +292,19 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 	
 				if ($data['nofollow'] != 1) {
 					
-// ************************************************************************************
-// ***************** Links are obtained using a different method other than the file, its url, works nicely
 					
 					$links = get_links($file, $url, $can_leave_domain, $data['base']);
-// *****************
+					
 					
 					$links = distinct_array($links);
 					$all_links = count($links);
 					$numoflinks = 0;
 					
-					
-
-					
-					
 					//if there are any, add to the temp table, but only if there isnt such url already
 					if (is_array($links)) {
 						reset ($links);
 
-						
-						
-echo 'print and insert data' . '<br>';
 						foreach($links as $item) {
-							
-								if (strpos($item, 'resources/cache') !== false) {
-									continue;
-								}
 
 								echo  $item . '<br>';
 								//echo 'THERE' . $item . '<br>';
@@ -332,17 +318,6 @@ echo 'print and insert data' . '<br>';
 								pg_query($db, $sql ) or trigger_error("Query Failed! SQL: $sql - Error: ".pg_last_error($db), E_USER_ERROR);
 								echo pg_last_error($db);
 						}
-						
-						/*
-						while ($thislink = each($links)) {
-							if ($tmp_urls[$thislink[1]] != 1) {
-								$tmp_urls[$thislink[1]] = 1;
-								$numoflinks++;
-								mysqli_query($db, "insert into temp (link, level, id) values ('$thislink[1]', '$level', '$sessid')");
-								echo mysqli_error($db);
-							}
-						}
-						*/
 						
 					}
 				} else {
@@ -379,26 +354,18 @@ foreach ($data['keywords'] as $item) {
 	echo '=====>' . $item . '<br>';
 }
 
-
-					
 foreach ($wordarray as $item) {
 	echo '---->' . $item . '<br>';
 }
 
-
-
 echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['keywords'] . '<br>';
 					
 					$wordarray = calc_weights ($wordarray, $title, $host, $path, $data['keywords'], $desc);
-
-					
-var_dump($wordarray);
 					
 					
 					//if there are words to index, add the link to the database, get its id, and add the word + their relation
 					if (is_array($wordarray) && count($wordarray) >= $min_words_per_page) {
 						
-						echo 'SUCCESS POINT #1' . '<br>';
 						if ($md5sum == '') {
 							pg_query($db, "insert into links (site_id, url, title, description, fulltxt, indexdate, size, md5sum, level) values ('$site_id', '$url', '$title', '$desc', '$fulltxt', CURRENT_TIMESTAMP, '$pageSize', '$newmd5sum', $thislevel)");
 							echo pg_last_error($db);
@@ -428,7 +395,6 @@ var_dump($wordarray);
 							printStandardReport('re-indexed', $command_line);
 						}
 					}else {
-						echo 'yo yo yo ' . '<br>';
 						printStandardReport('minWords', $command_line);
 
 					}
@@ -733,5 +699,5 @@ var_dump($wordarray);
 	if ( $log_handle) {
 		fclose($log_handle);
 	}
-
+	
 ?>
