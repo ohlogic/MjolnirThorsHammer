@@ -199,27 +199,7 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 	}
 	
 	
-	
-		// synonym expansion
-		$arr = array();
-		$arr = $searchstr['+'];
-		foreach($arr as $str){
-			
-			$sql = "SELECT m.synonym FROM synonyms e, synonyms m WHERE m.group_id = e.group_id AND e.synonym = '" . $str . "' and e.root = 1";
-			
-			$res = pg_query($db, $sql);
-			echo pg_last_error($db);
-			
-			if (pg_num_rows($res) > 0) {
-				while ($row = pg_fetch_assoc($res) ){
-					if ($row['synonym'] != $str){
-						if (DEBUG) echo 'what is the synonym = ' . $row['synonym'] . '<br>';
-						$searchstr['+'][] = $row['synonym'];
-					}
-				}
-			}
-		}
-	
+	$searchstr = synonym_expansion($searchstr);
 	
 	
 	if (DEBUG) {
@@ -444,6 +424,30 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 	return $results;
 }
 
+function synonym_expansion($searchstr) {
+	global $db;
+	
+		// synonym expansion
+		$arr = array();
+		$arr = $searchstr['+'];
+		foreach($arr as $str){
+			
+			$sql = "SELECT m.synonym FROM synonyms e, synonyms m WHERE m.group_id = e.group_id AND e.synonym = '" . $str . "' and e.root = 1";
+			
+			$res = pg_query($db, $sql);
+			echo pg_last_error($db);
+			
+			if (pg_num_rows($res) > 0) {
+				while ($row = pg_fetch_assoc($res) ){
+					if ($row['synonym'] != $str){
+						if (DEBUG) echo 'what is the synonym = ' . $row['synonym'] . '<br>';
+						$searchstr['+'][] = $row['synonym'];
+					}
+				}
+			}
+		}
+	return $searchstr;
+}
 
 
 function negation_word_search($searchstr, $description, $fulltxt) {
