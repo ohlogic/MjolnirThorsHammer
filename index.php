@@ -13,17 +13,17 @@ $results='';
 $start='';
 
 if (isset($_GET['query']))
-	$query = $_GET['query'];
+	$query = pg_escape_string($_GET['query']);
 if (isset($_GET['domain'])) 
-	$domain = $_GET['domain'];
+	$domain = pg_escape_string($_GET['domain']);
 if (isset($_GET['type'])) 
-	$type = $_GET['type'];
+	$type = pg_escape_string($_GET['type']);
 if (isset($_GET['category'])) 
-	$category = $_GET['category'];
+	$category = pg_escape_string($_GET['category']);
 if (isset($_GET['results'])) 
-	$results = $_GET['results'];
+	$results = pg_escape_string($_GET['results']);
 if (isset($_GET['start'])) 
-	$start = $_GET['start'];
+	$start = pg_escape_string($_GET['start']);
 
 
 //if (isset($_GET['search']))

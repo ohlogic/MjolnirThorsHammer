@@ -430,6 +430,7 @@ function synonym_expansion($searchstr) {
 	// synonym expansion
 	$arr = array();
 	$arr = $searchstr['+'];
+	if (count($arr) > 0)
 	foreach($arr as $str){
 		
 		$sql = "SELECT m.synonym FROM synonyms e, synonyms m WHERE m.group_id = e.group_id AND e.synonym = '" . $str . "' and e.root = 1";
