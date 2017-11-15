@@ -22,9 +22,7 @@
 	include "spiderfuncs.php";
 	include('simple_html_dom.php');
 	error_reporting (E_ALL ^ E_NOTICE ^ E_WARNING);
-//error_reporting(E_ALL);
-ini_set('display_errors', '1');
-//mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+	ini_set('display_errors', '1');
 	$delay_time = 0;
 
 	
@@ -150,7 +148,7 @@ ini_set('display_errors', '1');
 		global $command_line;
 		global $min_words_per_page;
 		global $supdomain;
-		global $mysqli_table_prefix, $user_agent, $tmp_urls, $delay_time, $domain_arr;
+		global $user_agent, $tmp_urls, $delay_time, $domain_arr;
 		global $db;
 		
 		$needsReindex = 1;
@@ -180,13 +178,13 @@ ini_set('display_errors', '1');
 
 		
 		
-		/*
+		
 		if ($indexdate <> '' && $url_status['date'] <> '') {
 			if ($indexdate > $url_status['date']) {
 				$url_status['state'] = "Date checked. Page contents not changed";
 				$needsReindex = 0;
 			}
-		}*/
+		}
 		
 		
 		
@@ -292,7 +290,7 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 	
 				if ($data['nofollow'] != 1) {
 					
-					
+					if ($thislevel > 0)	// level 0 only adds meta title, keyword, desc
 					$links = get_links($file, $url, $can_leave_domain, $data['base']);
 					
 					
@@ -339,7 +337,6 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 					} else {
 						$result = pg_query($db, "insert into domains (domain) values ('$domain_for_db')  RETURNING domain_id");
 						echo pg_last_error($db);
-						//$dom_id = mysqli_insert_id($db);
 						
 						$insert_row = pg_fetch_row($result);
 						$dom_id = $insert_row[0];
@@ -421,7 +418,7 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 
 
 	function index_site($url, $reindex, $maxlevel, $soption, $url_inc, $url_not_inc, $can_leave_domain) {
-		global $mysqli_table_prefix, $command_line, $mainurl,  $tmp_urls, $domain_arr, $all_keywords;
+		global $command_line, $mainurl,  $tmp_urls, $domain_arr, $all_keywords;
 		global $db;
 		
 		
@@ -619,10 +616,10 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 			$level++;
 		}
 	
-		mysqli_query($db, "delete from temp where id = '$sessid'");
-		echo mysqli_error($db);
-		mysqli_query($db, "delete from pending where site_id = '$site_id'");
-		echo mysqli_error($db);
+		pg_query($db, "delete from temp where id = '$sessid'");
+		echo pg_last_error($db);
+		pg_query($db, "delete from pending where site_id = '$site_id'");
+		echo pg_last_error($db);
 		printStandardReport('completed',$command_line);
 	
 
