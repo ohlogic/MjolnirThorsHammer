@@ -451,7 +451,7 @@ function save_keywords($wordarray, $link_id, $domain) {
 	reset($wordarray);
 	
 	foreach($wordarray as $item) {
-		$word = $item[0];
+		$word = pg_escape_string($item[0]);
 		$weight = $item[1];
 		
 		if (strlen($word)<= 30) {
