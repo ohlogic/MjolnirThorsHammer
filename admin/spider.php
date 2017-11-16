@@ -324,11 +324,11 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 				
 				if ($OKtoIndex == 1) {
 					
-					$title = pg_escape_string($data['title']);
+					$title = utf8_encode(pg_escape_string($data['title']));
 					$host = pg_escape_string($data['host']);
 					$path = pg_escape_string($data['path']);
-					$fulltxt = pg_escape_string($data['fulltext']);
-					$desc = pg_escape_string(substr($data['description'], 0,254));
+					$fulltxt = utf8_encode(pg_escape_string($data['fulltext']));
+					$desc = utf8_encode(pg_escape_string(substr($data['description'], 0,254)));
 					$url_parts = parse_url($url);
 					$domain_for_db = $url_parts['host'];
 
