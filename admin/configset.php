@@ -232,7 +232,7 @@ if (isset($Submit)) {
 	}
 		//header("location: admin.php");		
 } 	
-include "../settings/conf.php"; 
+require_once "../settings/conf.php"; 
 ?>
 <div id='submenu'>&nbsp;</div>
 <div id="settings">

@@ -16,32 +16,30 @@
 	$common= array_map('trim', $common);	// trims every item in the array
 											// https://stackoverflow.com/questions/5762439/how-to-trim-white-spaces-of-array-values-in-php
 
-											
-											
-//if (in_array("a", $common)) {
-//    echo "Got a";
-//}	
 
-function countSubstrs($haystack, $needle) {
-	$count = 0;
-	while(strpos($haystack,$needle) !== false) {
-	   $haystack = substr($haystack, (strpos($haystack,$needle) + 1));
-	   $count++;
+	function countSubstrs($haystack, $needle) {
+		$count = 0;
+		while(strpos($haystack,$needle) !== false) {
+		   $haystack = substr($haystack, (strpos($haystack,$needle) + 1));
+		   $count++;
+		}
+		return $count;
 	}
-	return $count;
-}
 	
-function replace_ampersand($str) {
-	return str_replace("&", "%26", $str);
-}
 	
-function quote_replace($str) {
+	function replace_ampersand($str) {
+		return str_replace("&", "%26", $str);
+	}
+	
+	
+	function quote_replace($str) {
 
-		$str = str_replace("\"",
-					  "&quot;", $str);
-		return str_replace("'","&apos;", $str);
-}	
+			$str = str_replace("\"",
+						  "&quot;", $str);
+			return str_replace("'","&apos;", $str);
+	}	
 
+	
 	$entities = array
 		(
 		"&amp" => "&",
@@ -134,8 +132,8 @@ function quote_replace($str) {
 				break;
 		}
 		return $httpvars;
-
-	}		
+	}
+	
 
 	function get_cats($parent) {
 		global $db;
@@ -153,63 +151,63 @@ function quote_replace($str) {
 
 		return $arr;
 	}	
-	
-	
-function fst_lt_snd($version1, $version2) {
 
-	$list1 = explode(".", $version1);
-	$list2 = explode(".", $version2);
 
-	$length = count($list1);
-	$i = 0;
-	while ($i < $length) {
-		if ($list1[$i] < $list2[$i])
-			return true;
-		if ($list1[$i] > $list2[$i])
-			return false;
-		$i++;
-	}
-	
-	if ($length < count($list2)) {
-		return true;
-	}
-	return false;
+	function fst_lt_snd($version1, $version2) {
 
-}	
-	
+		$list1 = explode(".", $version1);
+		$list2 = explode(".", $version2);
 
-function distinct_array($arr) {
-	rsort($arr);
-	reset($arr);
-	$newarr = array();
-	$i = 0;
-	$element = current($arr);
-
-	for ($n = 0; $n < sizeof($arr); $n++) {
-		if (next($arr) != $element) {
-			$newarr[$i] = $element;
-			$element = current($arr);
+		$length = count($list1);
+		$i = 0;
+		while ($i < $length) {
+			if ($list1[$i] < $list2[$i])
+				return true;
+			if ($list1[$i] > $list2[$i])
+				return false;
 			$i++;
 		}
-	}
+		
+		if ($length < count($list2)) {
+			return true;
+		}
+		return false;
+	}	
 
-	return $newarr;
-}
 
-	
-function get_dir_contents($dir) {
-	$contents = Array();
-	if ($handle = opendir($dir)) {
-		while (false !== ($file = readdir($handle))) {
-			if ($file != "." && $file != "..") {
-				$contents[] = $file;
+	function distinct_array($arr) {
+		rsort($arr);
+		reset($arr);
+		$newarr = array();
+		$i = 0;
+		$element = current($arr);
+
+		for ($n = 0; $n < sizeof($arr); $n++) {
+			if (next($arr) != $element) {
+				$newarr[$i] = $element;
+				$element = current($arr);
+				$i++;
 			}
 		}
-		closedir($handle);
+
+		return $newarr;
 	}
-	return $contents;
-}	
-		
+
+
+	function get_dir_contents($dir) {
+		$contents = Array();
+		if ($handle = opendir($dir)) {
+			while (false !== ($file = readdir($handle))) {
+				if ($file != "." && $file != "..") {
+					$contents[] = $file;
+				}
+			}
+			closedir($handle);
+		}
+		return $contents;
+	}	
+
+	
 	function remove_accents($string) {
 		return (strtr($string, "ÀÁÂÃÄÅÆàáâãäåæÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñÞßÿý",
 					  "aaaaaaaaaaaaaaoooooooooooooeeeeeeeeecceiiiiiiiiuuuuuuuunntsyy"));

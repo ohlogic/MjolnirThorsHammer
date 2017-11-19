@@ -1,6 +1,6 @@
 <?php 
 /*******************************************
-* Sphider Version 1..3.*
+* Sphider Version 1.3.*.*
 * This program is licensed under the GNU GPL.
 * By Ando Saabas           ando(a t)cs.ioc.ee
 ********************************************/
@@ -13,7 +13,8 @@ include "$include_dir/commonfuncs.php";
 extract (getHttpVars());
 $settings_dir = "../settings";
 $template_dir = "../templates";
-include "$settings_dir/conf.php";
+require_once "$settings_dir/conf.php";
+require_once "$settings_dir/database.php";
 set_time_limit (0);
 
 
@@ -63,25 +64,25 @@ $database_funcs = Array ("database" => "default");
 		} 
 
 		if ($index_funcs[$f] ) {
-			$index_funcs[$f]  = "selected";
+			$index_funcs[$f] = "selected";
 		} else {
 			$index_funcs[$f] = "default";
 		} 
 
 		if ($cat_funcs[$f] ) {
-			$cat_funcs[$f]  = "selected";
+			$cat_funcs[$f] = "selected";
 		} else {
 			$cat_funcs[$f] = "default";
 		} 
 
 		if ($clean_funcs[$f] ) {
-			$clean_funcs[$f]  = "selected";
+			$clean_funcs[$f] = "selected";
 		} else {
 			$clean_funcs[$f] = "default";
 		} 
 
 		if ($database_funcs[$f] ) {
-			$database_funcs[$f]  = "selected";
+			$database_funcs[$f] = "selected";
 		} else {
 			$database_funcs[$f] = "default";
 		} 
@@ -101,7 +102,7 @@ $database_funcs = Array ("database" => "default");
 
 <?php 
 	function list_cats($parent, $lev, $color, $message) {
-		global  $db;
+		
 		if ($lev == 0) {
 			?>
 			<div id="submenu">
@@ -118,11 +119,8 @@ $database_funcs = Array ("database" => "default");
 		for ($x = 0; $x < $lev; $x++)
 			$space .= "&nbsp;&nbsp;&nbsp;&nbsp;";
 
-		$query = "SELECT * FROM categories WHERE parent_num=$parent ORDER BY category";
-		$result = pg_query($db, $query);
-		echo pg_last_error($db);
-		
-		if (pg_num_rows($result) <> '')
+		$result = pg_query_last_error("SELECT * FROM categories WHERE parent_num=$parent ORDER BY category", __line__);
+		if (pg_num_rows($result) > 0)
 			while ($row = pg_fetch_array($result)) {
 				if ($color =="white") 
 					$color = "grey";
@@ -131,7 +129,8 @@ $database_funcs = Array ("database" => "default");
 	
 				$id = $row['category_id'];
 				$cat = $row['category'];
-				print "<tr class=\"$color\"><td width=90% align=left>$space<a href=\"admin.php?f=edit_cat&cat_id=$id\">".stripslashes($cat). "</a></td><td><a href=\"admin.php?f=edit_cat&cat_id=$id\" id=\"small_button\">Edit</a></td><td> <a href=\"admin.php?f=11&cat_id=$id\" onclick=\"return confirm('Are you sure you want to delete? Subcategories will be lost.')\" id=\"small_button\">Delete</a></td></tr>\n";
+				print "<tr class=\"$color\"><td width=90% align=left>$space<a href=\"admin.php?f=edit_cat&cat_id=$id\">" .stripslashes($cat). 
+				"</a></td><td><a href=\"admin.php?f=edit_cat&cat_id=$id\" id=\"small_button\">Edit</a></td><td> <a href=\"admin.php?f=11&cat_id=$id\" onclick=\"return confirm('Are you sure you want to delete? Subcategories will be lost.')\" id=\"small_button\">Delete</a></td></tr>\n";
 	
 				$color = list_cats($id, $lev + 1, $color, "");
 			}
@@ -141,124 +140,113 @@ $database_funcs = Array ("database" => "default");
 		return $color;
 	}
 
+	
 	function walk_through_cats($parent, $lev, $site_id) {
-		global  $db;
+
 		$space = "";
 		for ($x = 0; $x < $lev; $x++)
 			$space .= "&nbsp;&nbsp;&nbsp;&nbsp;";
 
-		$query = "SELECT * FROM categories WHERE parent_num=$parent ORDER BY category";
-		$result = pg_query($db, $query);
-		echo pg_last_error($db);
-		
-		if (pg_num_rows($result) <> '')
+		$result = pg_query_last_error("SELECT * FROM categories WHERE parent_num=$parent ORDER BY category", __LINE__);
+		if (pg_num_rows($result) > 0)
 			while ($row = pg_fetch_array($result)) {
 				$id = $row['category_id'];
 				$cat = $row['category'];
 				$state = '';
 				if ($site_id <> '') {
-					$result2 = pg_query($db, "select * from site_category where site_id=$site_id and category_id=$id");
-					echo pg_last_error($db);
-					$rows = pg_num_rows($result2);
+					$result2 = pg_query_last_error("select * from site_category where site_id=$site_id and category_id=$id", __LINE__);
 
-					if ($rows > 0)
+					if (pg_num_rows($result2) > 0)
 						$state = "checked";
 				}
 
 				print $space . "<input type=checkbox name=cat[$id] $state>" . $cat . "<br/>\n";
-				;
+				
 				walk_through_cats($id, $lev + 1, $site_id);
 			}
 	}
 
-
-
-
-
-
-function addcatform($parent) {
-	global  $db;
-	$par2 = "";
-	$par2num = "";
 	
-	?>
-	
-	<div id="submenu">
-	</div>
-	
-	<?php 
-	
-	if ($parent=='') 
-		$par='(Top level)';
-	else {
-		$query = "SELECT category, parent_num FROM categories WHERE category_id='$parent'";
-		$result = pg_query($db, $query);
-		if (!pg_last_error($db))	{
-			if ($row = pg_fetch_row($result)) {
-				$par=$row[0];
-				$query = "SELECT Category_ID, Category FROM categories WHERE Category_ID='$row[1]'";
-				$result = pg_query($db, $query);
-				echo pg_last_error($db);
-				if (pg_num_rows($result)<>'') {
-					$row = pg_fetch_row($result);
-					$par2num = $row[0];
-					$par2 = $row[1];
-				}
-				else
-					$par2 = "Top level";
-	
+	function addcatform($parent) {
+		
+		$par2 = "";
+		$par2num = "";
+		?>
+		
+		<div id="submenu">
+		</div>
+		
+		<?php
+		if ($parent == '') 
+			$par='(Top level)';
+		else {
+			$result = pg_query_last_error("SELECT category, parent_num FROM categories WHERE category_id='$parent'", __LINE__);
+			if ($result)	{
+				if ($row = pg_fetch_row($result)) {
+					$par=$row[0];
+
+					$result = pg_query_last_error("SELECT Category_ID, Category FROM categories WHERE Category_ID='$row[1]'", __LINE__);
+					if (pg_num_rows($result) <> '') {
+						$row = pg_fetch_row($result);
+						$par2num = $row[0];
+						$par2 = $row[1];
+					}
+					else {
+						$par2 = "Top level";
+					}
 				}
 			}
-		else
-			echo pg_last_error($db);
-		print "</td></tr></table>";
-	}
-
-	?>
-	   <br/><center><table><tr><td valign=top align=center colspan=2><b>Parent: <?php print "<a href=admin.php?f=add_cat&parent=$par2num>$par2</a> >".stripslashes($par)?></b></td></tr>
-		<form action=admin.php method=post>
-   		<input type=hidden name=f value=7>
-   		<input type=hidden name=parent value="<?php print $parent?>"
-		<tr><td><b>Category:</b></td><td> <input type=text name=category size=40></td></tr>
-		<tr><td></td><td><input type=submit id="submit" value=Add></td></tr></form>
+			else {
+				echo "addcatform error";
+			}
+			print "</td></tr></table>";
+		}
+		?>
 		
-<?php 
-	print "<tr><td colspan=2>";
-	if ($parent == '')
-		$parent = 0;
-	
-	$query = "SELECT category_ID, category FROM categories WHERE parent_num='$parent'";
-	echo $query . '<br>';
-	$result = pg_query($db, $query);
-	echo pg_last_error($db);
-	if (pg_num_rows($result)>0) {
-		print "<br/><b>Create subcategory under</b><br/><br/>";
+		<br/><center><table><tr><td valign=top align=center colspan=2><b>Parent: 
+		<?php
+			print "<a href=admin.php?f=add_cat&parent=$par2num>$par2</a> >".stripslashes($par)
+		?>
+		</b></td></tr>
+			<form action=admin.php method=post>
+			<input type=hidden name=f value=7>
+			<input type=hidden name=parent value="<?php print $parent?>"
+			<tr><td><b>Category:</b></td><td> <input type=text name=category size=40></td></tr>
+			<tr><td></td><td><input type=submit id="submit" value=Add></td></tr></form>
+			
+		<?php 
+		print "<tr><td colspan=2>";
+		if ($parent == '')
+			$parent = 0;
+		
+		$result = pg_query_last_error("SELECT category_ID, category FROM categories WHERE parent_num='$parent'", __LINE__);
+		if (pg_num_rows($result) > 0) {
+			print "<br/><b>Create subcategory under</b><br/><br/>";
+		}
+		while ($row = pg_fetch_row($result)) {
+			print "<a href=\"admin.php?f=add_cat&parent=$row[0]\">".stripslashes($row[1])."</a><br/>";
+		}
+		print "</td></tr></table></center>";
 	}
-	while ($row = pg_fetch_row($result)) {
-		print "<a href=\"admin.php?f=add_cat&parent=$row[0]\">".stripslashes($row[1])."</a><br/>";
-	}
-	print "</td></tr></table></center>";
-}
 
 
 	function addcat ($category, $parent) {
-			global  $db;
-			if ($category=="") return;
-		$category = addslashes($category);
+		
+		if ($category == ""){
+			return;
+		}
+		$category = pg_escape_string($category);
 		if ($parent == "") {
 			$parent = 0;
 		}
-		$query = "INSERT INTO categories (category, parent_num)
-				 VALUES ('$category', ".$parent.")";
-		pg_query($db, $query);
-		if (!pg_last_error($db)) {
+
+		$res = pg_query_last_error("INSERT INTO categories (category, parent_num) VALUES ('$category', ".$parent.")", __LINE__);
+		if ($res) {
 			return "<center><b>Category $category added.</b></center>" ;
 		} else {
-			return pg_last_error($db);
+			return "addcat error";
 		}
 	}
-
-
 
 
 	function addsiteform() {
@@ -278,9 +266,8 @@ function addcatform($parent) {
 	}
 
 	function editsiteform($site_id) {
-		global  $db;
-		$result = pg_query($db, "SELECT site_id, url, title, short_desc, spider_depth, required, disallowed, can_leave_domain from sites where site_id=$site_id");
-		echo pg_last_error($db);
+		
+		$result = pg_query_last_error("SELECT site_id, url, title, short_desc, spider_depth, required, disallowed, can_leave_domain from sites where site_id=$site_id", __LINE__);
 		$row = pg_fetch_array($result);
 		$depth = $row['spider_depth'];
 		$fullchecked = "";
@@ -318,43 +305,41 @@ function addcatform($parent) {
 			<?php  walk_through_cats(0, 0, $site_id);?></td></tr>
 			<tr><td></td><td></td><td><input type="submit"  id="submit"  value="Update"></td></tr></form></table></center></div>
 		<?php 
-		}
+	}
 
 
-		function editsite ($site_id, $url, $title, $short_desc, $depth, $required, $disallowed, $domaincb,  $cat) {
-			global  $db;
-			$short_desc = addslashes($short_desc);
-			$title = addslashes($title);
-			pg_query($db, "delete from site_category where site_id=$site_id");
-			echo pg_last_error($db);
-			$compurl=parse_url($url);
-			if ($compurl['path']=='')
-				$url=$url."/";
-			pg_query($db, "UPDATE sites SET url='$url', title='$title', short_desc='$short_desc', spider_depth =$depth, required='$required', disallowed='$disallowed', can_leave_domain=$domaincb WHERE site_id=$site_id");
-			echo pg_last_error($db);
-			$result=pg_query($db, "select category_id from categories");
-			echo pg_last_error($db);
-			print pg_last_error($db);
-			while ($row=pg_fetch_row($result)) {
-				$cat_id=$row[0];
-				if ($cat[$cat_id]=='on') {
-					pg_query($db, "INSERT INTO site_category (site_id, category_id) values ('$site_id', '$cat_id')");
-					echo pg_last_error($db);
-				}
-			}
-			if (!pg_last_error($db)) {
-				return "<br/><center><b>Site updated.</b></center>" ;
-			} else {
-				return pg_last_error($db);
+	function editsite ($site_id, $url, $title, $short_desc, $depth, $required, $disallowed, $domaincb,  $cat) {
+		
+		$short_desc = pg_escape_string($short_desc);
+		$title = pg_escape_string($title);
+		
+		pg_query_last_error("delete from site_category where site_id=$site_id", __LINE__);
+
+		$compurl = parse_url($url);
+		if ($compurl['path'] == '')
+			$url = $url . "/";
+		
+		pg_query_last_error("UPDATE sites SET url='$url', title='$title', short_desc='$short_desc', spider_depth =$depth, required='$required', disallowed='$disallowed', can_leave_domain=$domaincb WHERE site_id=$site_id", __LINE__);
+		$result = pg_query_last_error("select category_id from categories", __LINE__);
+		while ($row = pg_fetch_row($result)) {
+			$cat_id = $row[0];
+			if ($cat[$cat_id] == 'on') {
+				pg_query_last_error("INSERT INTO site_category (site_id, category_id) values ('$site_id', '$cat_id')", __LINE__);
 			}
 		}
+		
+		if ($result) {
+			return "<br/><center><b>Site updated.</b></center>" ;
+		} else {
+			return "editsite error";
+		}
+	}
 
 	function editcatform($cat_id) {
-		global  $db;
-		$result = pg_query($db, "SELECT category FROM categories where category_id='$cat_id'");
-		echo pg_last_error($db);
-		$row=pg_fetch_array($result);
-		$category=$row[0];
+		
+		$result = pg_query_last_error("SELECT category FROM categories where category_id='$cat_id'", __LINE__);
+		$row = pg_fetch_array($result);
+		$category = $row[0];
 		?>
 			<div id="submenu">
 			<center><b>Edit category</b></center>
@@ -367,35 +352,32 @@ function addcatform($parent) {
 			<tr><td><b>Category:</b></td><td> <input type="text" name="category" value="<?php print $category?>"size=40></td></tr>
 			<tr><td></td><td><input type="submit"  id="submit"  value="Update"></td></tr></form></table></center></div>
 		<?php 
-		}
+	}
 
 
 	function editcat ($cat_id, $category) {
-		global  $db;
-		$qry = "UPDATE categories SET category='".addslashes($category)."' WHERE category_id='$cat_id'";
-		pg_query($db, $qry);
-		if (!pg_last_error($db))	{
+
+		$res = pg_query_last_error("UPDATE categories SET category='".pg_escape_string($category)."' WHERE category_id='$cat_id'", __LINE__ );
+		if ($res)	{
 			return "<br/><center><b>Category updated</b></center>";
 		} else {
-			return pg_last_error($db);
+			return "error editcat";
 		}
 	}
 
 
-
 	function showsites($message) {
-		global  $db;
-		$result = pg_query($db, "SELECT site_id, url, title, indexdate from sites ORDER By indexdate, title");
-		echo pg_last_error($db);
+
+		$result = pg_query_last_error("SELECT site_id, url, title, indexdate from sites ORDER By indexdate, title", __LINE__ );
 		?>
 		<div id='submenu'>
 		 <ul>
 		  <li><a href='admin.php?f=add_site'>Add site</a> </li>
-		  <?php 
+			<?php 
 			if (pg_num_rows($result) > 0) {
-				?>
+			?>
 				<li><a href='spider.php?all=1'> Reindex all</a></li>
-				<?php 
+			<?php 
 			}
 			?>
 		 </ul>
@@ -408,25 +390,27 @@ function addcatform($parent) {
 			print "<div align=\"center\"><table cellspacing =\"0\" cellpadding=\"0\" class=\"darkgrey\"><tr><td><table cellpadding=\"3\" cellspacing=\"1\">
 			<tr class=\"grey\"><td align=\"center\"><b>Site name</b></td><td align=\"center\"><b>Site url</b></td><td align=\"center\"><b>Last indexed</b></td><td colspan=4></td></tr>\n";
 		} else {
-			?><center><p><b>Welcom to Sphider. <br><br>Choose "Add site" from the submenu to add a new site, or "Index" to directly go to the indexing section.</b></p></center><?php 
+		?>
+		<center><p><b>Welcom to Sphider. <br><br>Choose "Add site" from the submenu to add a new site, or "Index" to directly go to the indexing section.</b></p></center>
+		<?php 
 		}
 		$class = "grey";
-		while ($row=pg_fetch_array($result))	{
+		while ($row = pg_fetch_array($result))	{
 			if ($row['indexdate']=='') {
-				$indexstatus="<font color=\"red\">Not indexed</font>";
-				$indexoption="<a href=\"admin.php?f=index&url=$row[url]\">Index</a>";
+				$indexstatus = "<font color=\"red\">Not indexed</font>";
+				$indexoption = "<a href=\"admin.php?f=index&url=$row[url]\">Index</a>";
 			} else {
 				$site_id = $row['site_id'];
-				$result2 = pg_query($db, "SELECT site_id from pending where site_id =$site_id");
-				echo pg_last_error($db);			
-				$row2=pg_fetch_array($result2);
+				$result2 = pg_query_last_error("SELECT site_id from pending where site_id = $site_id", __LINE__);
+			
+				$row2 = pg_fetch_array($result2);
 				if ($row2['site_id'] == $row['site_id']) {
 					$indexstatus = "Unfinished";
-					$indexoption="<a href=\"admin.php?f=index&url=$row[url]\">Continue</a>";
+					$indexoption = "<a href=\"admin.php?f=index&url=$row[url]\">Continue</a>";
 
 				} else {
 					$indexstatus = $row['indexdate'];
-					$indexoption="<a href=\"admin.php?f=index&url=$row[url]&reindex=1\">Re-index</a>";
+					$indexoption = "<a href=\"admin.php?f=index&url=$row[url]&reindex=1\">Re-index</a>";
 				}
 			}
 			if ($class =="white") 
@@ -442,146 +426,122 @@ function addcatform($parent) {
 		}
 	}
 
+	
 	function deletecat($cat_id) {
-		global  $db;
+
 		$list = implode(",", get_cats($cat_id));
-		pg_query($db, "delete from categories where category_id in ($list)");
-		echo pg_last_error($db);
-		pg_query($db, "delete from site_category where category_id=$cat_id");
-		echo pg_last_error($db);
+		pg_query_last_error("delete from categories where category_id in ($list)", __LINE__);
+		
+		pg_query_last_error("delete from site_category where category_id=$cat_id", __LINE__);
 		return "<center><b>Category deleted.</b></center>";
 	}
 	
+	
 	function deletesite($site_id) {
-		global  $db;
-		pg_query($db, "delete from sites where site_id=$site_id");
-		echo pg_last_error($db);
-		pg_query($db, "delete from site_category where site_id=$site_id");
-		echo pg_last_error($db);
-		$query = "select link_id from links where site_id=$site_id";
-		$result = pg_query($db, $query);
-		echo pg_last_error($db);
+
+		pg_query_last_error("delete from sites where site_id=$site_id", __LINE__);
+		pg_query_last_error("delete from site_category where site_id=$site_id", __LINE__);
+		
+		$result = pg_query_last_error("select link_id from links where site_id=$site_id", __LINE__);
 		$todelete = array();
-		while ($row=pg_fetch_array($result)) {
-			$todelete[]=$row['link_id'];
+		while ($row = pg_fetch_array($result)) {
+			$todelete[] = $row['link_id'];
 		}
 
-		if (count($todelete)>0) {
+		if (count($todelete) > 0) {
 			$todelete = implode(",", $todelete);
-			//for ($i=0;$i<=15; $i++) {
-			//	$char = dechex($i);
-				$query = "delete from link_keyword where link_id in($todelete)";
-				pg_query($db, $query);
-				echo pg_last_error($db);
-			//}
+			
+			pg_query_last_error("delete from link_keyword where link_id in($todelete)", __LINE__);
 		}
 
-		pg_query($db, "delete from links where site_id=$site_id");
-		echo pg_last_error($db);
-		pg_query($db, "delete from pending where site_id=$site_id");
-		echo pg_last_error($db);
+		pg_query_last_error("delete from links where site_id=$site_id", __LINE__);
+		pg_query_last_error("delete from pending where site_id=$site_id", __LINE__);
+
 		return "<br/><center><b>Site deleted</b></center>";
 	}
 
+
 	function deletePage($link_id) {
-		global  $db;
-		pg_query($db, "delete from links where link_id=$link_id");
-		echo pg_last_error($db);
-		//for ($i=0;$i<=15; $i++) {
-		//	$char = dechex($i);
-			pg_query($db, "delete from link_keyword where link_id=$link_id");
-		//}
-		echo pg_last_error($db);
+		
+		pg_query_last_error("delete from links where link_id=$link_id", __LINE__);
+		pg_query_last_error("delete from link_keyword where link_id=$link_id", __LINE__);
+
 		return "<br/><center><b>Page deleted</b></center>";
 	}
 
-	
+
 	function cleanTemp() {
-		global  $db;
-		$result = pg_query($db, "delete from temp where level >= 0");
-		echo pg_last_error($db);
-		$del = pg_affected_rows();
-				?>
+		
+		$result = pg_query_last_error("delete from temp where level >= 0", __LINE__);
+		$del = pg_affected_rows($result);
+		?>
 		<div id="submenu">
-		</div><?php 
+		</div>
+		<?php 
 		print "<br/><center><b>Temp table cleared, $del items deleted.</b></center>";
 	}
 
+	
 	function clearLog() {
-		global  $db;
-		$result = pg_query($db, "delete from query_log;");
-		echo pg_last_error($db);
-		$del = pg_affected_rows();
+
+		$result = pg_query_last_error("delete from query_log;", __LINE__);
+		$del = pg_affected_rows($result);
 		?>
 		<div id="submenu">
-		</div><?php 
+		</div>
+		<?php 
 		print "<br/><center><b>Search log cleared, $del items deleted.</b></center>";
 	}
 
 	
 	function cleanLinks() {
-		global  $db;
-		$query = "select site_id from sites";
-		$result = pg_query($db, $query);
-		echo pg_last_error($db);
+
+		$result = pg_query_last_error("select site_id from sites", __LINE__);
 		$todelete = array();
-		if (pg_num_rows($result)>0) {
-			while ($row=pg_fetch_array($result)) {
+		if (pg_num_rows($result) > 0) {
+			while ($row = pg_fetch_array($result)) {
 				$todelete[]=$row['site_id'];
 			}
 			$todelete = implode(",", $todelete);
 			$sql_end = " not in ($todelete)";
 		}
 		
-		$result = pg_query($db, "select link_id from links where site_id".$sql_end);
-		echo pg_last_error($db);
+		$result = pg_query_last_error("select link_id from links where site_id".$sql_end, __LINE__);
 		$del = pg_num_rows($result);
-		while ($row=pg_fetch_array($result)) {
+		while ($row = pg_fetch_array($result)) {
 			$link_id=$row[link_id];
-			//for ($i=0;$i<=15; $i++) {
-			//	$char = dechex($i);
-				pg_query($db, "delete from link_keyword where link_id=$link_id");
-				echo pg_last_error($db);
-			//}
-			pg_query($db, "delete from links where link_id=$link_id");
-			echo pg_last_error($db);
+			
+			pg_query_last_error("delete from link_keyword where link_id=$link_id", __LINE__);
+			
+			pg_query_last_error("delete from links where link_id=$link_id", __LINE__);
 		}
 
-		$result = pg_query($db, "select link_id from links where site_id is NULL");
-		echo pg_last_error($db);
+		$result = pg_query_last_error( "select link_id from links where site_id is NULL", __LINE__);
 		$del += pg_num_rows($result);
-		while ($row=pg_fetch_array($result)) {
-			$link_id=$row[link_id];
-			//for ($i=0;$i<=15; $i++) {
-			//	$char = dechex($i);
-				pg_query($db, "delete from link_keyword where link_id=$link_id");
-				echo pg_last_error($db);
-			//}
-			pg_query($db, "delete from links where link_id=$link_id");
-			echo pg_last_error($db);
+		while ($row = pg_fetch_array($result)) {
+			$link_id = $row[link_id];
+
+			pg_query_last_error("delete from link_keyword where link_id=$link_id", __LINE__);
+			pg_query_last_error("delete from links where link_id=$link_id", __LINE__);
 		}
 		?>
 		<div id="submenu">
-		</div><?php 
+		</div>
+		<?php 
 		print "<br/><center><b>Links table cleaned, $del links deleted.</b></center>";
 	}
 
 	function cleanKeywords() {
-		global  $db;
-		$query = "select keyword_id, keyword from keywords";
-		$result = pg_query($db, $query);
-		echo pg_last_error($db);
+
+		$result = pg_query_last_error("select keyword_id, keyword from keywords", __LINE__);
 		$del = 0;
-		while ($row=pg_fetch_array($result)) {
-			$keyId=$row['keyword_id'];
-			$keyword=$row['keyword'];
-			$wordmd5 = substr(md5($keyword), 0, 1);
-			$query = "select keyword_id from link_keyword$wordmd5 where keyword_id = $keyId";
-			$result2 = pg_query($db, $query);
-			echo pg_last_error($db);
-			if (pg_num_rows($result2) < 1) {
-				pg_query($db, "delete from keywords where keyword_id=$keyId");
-				echo pg_last_error($db);
+		while ($row = pg_fetch_array($result)) {
+			$keyId = $row['keyword_id'];
+			$keyword = $row['keyword'];
+			
+			$result2 = pg_query_last_error("select keyword_id from link_keyword where keyword_id = $keyId", __LINE__);
+			if (pg_num_rows($result2) <> 1) {
+				pg_query_last_error("delete from keywords where keyword_id=$keyId", __LINE__);
 				$del++;
 			}
 		}?>
@@ -590,81 +550,81 @@ function addcatform($parent) {
 		print "<br/><center><b>Keywords table cleaned, $del keywords deleted.</b></center>";
 	}
 
+	
 	function getStatistics() {
-		global  $db;
+
 		$stats = array();
 		$keywordQuery = "select count(keyword_id) from keywords";
 		$linksQuery = "select count(url) from links";
 		$siteQuery = "select count(site_id) from sites";
 		$categoriesQuery = "select count(category_id) from categories";
 
-		$result = pg_query($db, $keywordQuery);
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$stats['keywords']=$row[0];
+		$result = pg_query_last_error($keywordQuery, __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$stats['keywords'] = $row[0];
 		}
-		$result = pg_query($db, $linksQuery);
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$stats['links']=$row[0];
+		$result = pg_query_last_error($linksQuery, __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$stats['links'] = $row[0];
 		}
-		//for ($i=0;$i<=15; $i++) {
-		//	$char = dechex($i);
-			$result = pg_query($db, "select count(link_id) from link_keyword");
-			echo pg_last_error($db);
-			if ($row=pg_fetch_array($result)) {
-				$stats['index']+=$row[0];
-			}
-		//}
-		$result = pg_query($db, $siteQuery);
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$stats['sites']=$row[0];
+
+		$result = pg_query_last_error("select count(link_id) from link_keyword", __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$stats['index'] += $row[0];
 		}
-		$result = pg_query($db, $categoriesQuery);
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$stats['categories']=$row[0];
+		
+		$result = pg_query_last_error($siteQuery, __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$stats['sites'] = $row[0];
 		}
+		
+		$result = pg_query_last_error($categoriesQuery, __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$stats['categories'] = $row[0];
+		}
+		
 		return $stats;
 	}
 
 
 
 	function addsite ($url, $title, $short_desc, $cat) {
-		global  $db;
-		$short_desc = addslashes($short_desc);
-		$title = addslashes($title);
-		$compurl=parse_url("".$url);
-		if ($compurl['path']=='')
-			$url=$url."/";
-		$result = pg_query($db, "select site_ID from sites where url='$url'");
-		echo pg_last_error($db);
+
+		$short_desc = pg_escape_string($short_desc);
+		$title = pg_escape_string($title);
+		$compurl = parse_url($url);
+		if ($compurl['path'] == '')
+			$url = $url . "/";
+		
+		$result = pg_query_last_error("select site_ID from sites where url='$url'", __LINE__);
+		
 		$rows = pg_num_rows($result);
-		if ($rows==0 ) {
-			pg_query($db, "INSERT INTO sites (url, title, short_desc) VALUES ('$url', '$title', '$short_desc')");
-			echo pg_last_error($db);
-			$result = pg_query($db, "select site_ID from sites where url='$url'");
-			echo pg_last_error($db);
+		if ($rows == 0) {
+			
+			pg_query_last_error("INSERT INTO sites (url, title, short_desc) VALUES ('$url', '$title', '$short_desc')", __LINE__);
+
+			$result = pg_query_last_error("select site_ID from sites where url='$url'", __LINE__);
 			$row = pg_fetch_row($result);
 			$site_id = $row[0];
-			$result=pg_query($db, "select category_id from categories");
-			echo pg_last_error($db);
-			while ($row=pg_fetch_row($result)) {
-				$cat_id=$row[0];
-				if ($cat[$cat_id]=='on') {
-					pg_query($db, "INSERT INTO site_category (site_id, category_id) values ('$site_id', '$cat_id')");
-					echo pg_last_error($db);
+			
+			$result = pg_query_last_error("select category_id from categories", __LINE__);
+			
+			while ($row = pg_fetch_row($result)) {
+				$cat_id = $row[0];
+				if ($cat[$cat_id] == 'on') {
+					pg_query_last_error("INSERT INTO site_category (site_id, category_id) values ('$site_id', '$cat_id')", __LINE__);
 				}
 	 		}
 		
-			if (!pg_last_error($db))	{
+			if ($result) {
 				$message =  "<br/><center><b>Site added</b></center>" ;
-			} else {
-				$message = pg_last_error($db);
+			}
+			else {
+				$message = "addsite error";
 			}
 
-		} else {
+		}
+		else {
 			$message = "<center><b>Site already in database</b></center>";
 		}
 		return $message;
@@ -672,18 +632,17 @@ function addcatform($parent) {
 
 
 	function indexscreen ($url, $reindex) {
-		global  $db;
+		
 		$check = "";
 		$levelchecked = "checked";
 		$spider_depth = 2;
-		if ($url=="") {
+		if ($url == "") {
 			$url = "http://";
 			$advurl = "";
 		} else {
 			$advurl = $url;
-			$result = pg_query($db, "select spider_depth, required, disallowed, can_leave_domain from sites " .
-					"where url='$url'");
-			echo pg_last_error($db);
+			
+			$result = pg_query_last_error("select spider_depth, required, disallowed, can_leave_domain from sites where url='$url'", __LINE__);
 			if (pg_num_rows($result) > 0) {
 				$row = pg_fetch_row($result);
 				$spider_depth = $row[0];
@@ -695,7 +654,7 @@ function addcatform($parent) {
 				$must = $row[1];
 				$mustnot = $row[2];
 				$canleave = $row[3];
-			}			
+			}
 		}
 
 		?>
@@ -704,9 +663,9 @@ function addcatform($parent) {
 				<li>
 				<?php 
 				if ($must !="" || $mustnot !="" || $canleave == 1 ) {	
-					$_SESSION['index_advanced']=1;
+					$_SESSION['index_advanced'] = 1;
 				}
-				if ($_SESSION['index_advanced']==1){
+				if ($_SESSION['index_advanced'] == 1){
 					print "<a href='admin.php?f=index&adv=0&url=$advurl'>Hide advanced options</a>";
 				} else {
 					print "<a href='admin.php?f=index&adv=1&url=$advurl'>Advanced options</a>";
@@ -723,11 +682,11 @@ function addcatform($parent) {
 		<tr><td><b>Indexing options:</b></td><td>
 		<input type="radio" name="soption" value="full" <?php print $fullchecked;?>> Full<br/>
 		<input type="radio" name="soption" value="level" <?php print $levelchecked;?>>To depth: <input type="text" name="maxlevel" size="2" value="<?php print $spider_depth;?>"><br/>
-		<?php if ($reindex==1) $check="checked"?>
+		<?php if ($reindex == 1) $check="checked"?>
 		<input type="checkbox" name="reindex" value="1" <?php print $check;?>> Reindex<br/>
 		</td></tr>
 		<?php 
-		if ($_SESSION['index_advanced']==1){
+		if ($_SESSION['index_advanced'] == 1){
 			?>
 			<?php if ($canleave==1) {$checkcan="checked" ;} ?>
 			<tr><td></td><td><input type="checkbox" name="domaincb" value="1" <?php print $checkcan;?>> Spider can leave domain <!--a href="javascript:;" onClick="window.open('hmm','newWindow','width=300,height=300,left=600,top=200,resizable');" >?</a--><br/></td></tr>
@@ -742,27 +701,29 @@ function addcatform($parent) {
 		<?php 
 	}
 
+	
 	function siteScreen($site_id, $message)  {
-		global  $db;
-		$result = pg_query($db, "SELECT site_id, url, title, short_desc, indexdate from sites where site_id=$site_id");
-		echo pg_last_error($db);
-		$row=pg_fetch_array($result);
+
+		$result = pg_query_last_error("SELECT site_id, url, title, short_desc, indexdate from sites where site_id=$site_id", __LINE__);
+		$row = pg_fetch_array($result);
 		$url = replace_ampersand($row[url]);
-		if ($row['indexdate']=='') {
-			$indexstatus="<font color=\"red\">Not indexed</font>";
-			$indexoption="<a href=\"admin.php?f=index&url=$url\">Index</a>";
-		} else {
+		if ($row['indexdate'] == '') {
+			$indexstatus = "<font color=\"red\">Not indexed</font>";
+			$indexoption = "<a href=\"admin.php?f=index&url=$url\">Index</a>";
+		}
+		else {
 			$site_id = $row['site_id'];
-			$result2 = pg_query($db, "SELECT site_id from pending where site_id =$site_id");
-			echo pg_last_error($db);			
-			$row2=pg_fetch_array($result2);
+			
+			$result2 = pg_query_last_error("SELECT site_id from pending where site_id =$site_id", __LINE__);		
+			$row2 = pg_fetch_array($result2);
 			if ($row2['site_id'] == $row['site_id']) {
 				$indexstatus = "Unfinished";
-				$indexoption="<a href=\"admin.php?f=index&url=$url\">Continue indexing</a>";
+				$indexoption = "<a href=\"admin.php?f=index&url=$url\">Continue indexing</a>";
 
-			} else {
+			}
+			else {
 				$indexstatus = $row['indexdate'];
-				$indexoption="<a href=\"admin.php?f=index&url=$url&reindex=1\">Re-index</a>";
+				$indexoption = "<a href=\"admin.php?f=index&url=$url&reindex=1\">Re-index</a>";
 			}
 		}
 		?>
@@ -817,58 +778,48 @@ function addcatform($parent) {
 
 
 	function siteStats($site_id) {
-		global  $db;
-		$result = pg_query($db, "select url from sites where site_id=$site_id");
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$url=$row[0];
+
+		$result = pg_query_last_error( "select url from sites where site_id=$site_id", __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$url = $row[0];
 
 			$lastIndexQuery = "SELECT indexdate from sites where site_id = $site_id";
 			$sumSizeQuery = "select sum(length(fulltxt)) from links where site_id = $site_id";
 			$siteSizeQuery = "select sum(size) from links where site_id = $site_id";
 			$linksQuery = "select count(*) from links where site_id = $site_id";
 
-			$result = pg_query($db, $lastIndexQuery);
-			echo pg_last_error($db);
-			if ($row=pg_fetch_array($result)) {
-				$stats['lastIndex']=$row[0];
+			$result = pg_query_last_error($lastIndexQuery, __LINE__);
+			if ($row = pg_fetch_array($result)) {
+				$stats['lastIndex'] = $row[0];
 			}
 
-			$result = pg_query($db, $sumSizeQuery);
-			echo pg_last_error($db);
-			if ($row=pg_fetch_array($result)) {
-				$stats['sumSize']=$row[0];
+			$result = pg_query_last_error($sumSizeQuery, __LINE__);
+			if ($row = pg_fetch_array($result)) {
+				$stats['sumSize'] = $row[0];
 			}
-			$result = pg_query($db, $linksQuery);
-			echo pg_last_error($db);
-			if ($row=pg_fetch_array($result)) {
-				$stats['links']=$row[0];
-			}
-
-			//for ($i=0;$i<=15; $i++) {
-			//	$char = dechex($i);
-				$result = pg_query($db, "select count(*) from links, link_keyword where links.link_id=link_keyword.link_id and links.site_id = $site_id");
-				echo pg_last_error($db);
-				if ($row=pg_fetch_array($result)) {
-					$stats['index']+=$row[0];
-				}
-			//}
-			//for ($i=0;$i<=15; $i++) {
-			//	$char = dechex($i);
-				$wordQuery = "select count(distinct keyword) from keywords, links, link_keyword where links.link_id=link_keyword.link_id and links.site_id = $site_id and keywords.keyword_id = link_keyword.keyword_id";
-				$result = pg_query($db, $wordQuery);
-				echo pg_last_error($db);
-				if ($row=pg_fetch_array($result)) {
-					$stats['words']+=$row[0];
-				}
-			//}
 			
-			$result = pg_query($db, $siteSizeQuery);
-			echo pg_last_error($db);
-			if ($row=pg_fetch_array($result)) {
+			$result = pg_query_last_error($linksQuery, __LINE__);
+			if ($row = pg_fetch_array($result)) {
+				$stats['links'] = $row[0];
+			}
+
+			$result = pg_query_last_error("select count(*) from links, link_keyword where links.link_id=link_keyword.link_id and links.site_id = $site_id", __LINE__);
+			if ($row = pg_fetch_array($result)) {
+				$stats['index'] += $row[0];
+			}
+
+			$wordQuery = "select count(distinct keyword) from keywords, links, link_keyword where links.link_id=link_keyword.link_id and links.site_id = $site_id and keywords.keyword_id = link_keyword.keyword_id";
+			$result = pg_query_last_error($wordQuery, __LINE__);
+			if ($row = pg_fetch_array($result)) {
+				$stats['words'] += $row[0];
+			}
+
+			$result = pg_query_last_error($siteSizeQuery, __LINE__);
+			if ($row = pg_fetch_array($result)) {
 				$stats['siteSize']=$row[0];
 			}
-			if ($stats['siteSize']=="")
+			
+			if ($stats['siteSize'] == "")
 				$stats['siteSize'] = 0;
 			$stats['siteSize'] = number_format($stats['siteSize'], 2);
 			print"<div id=\"submenu\"></div>";
@@ -885,10 +836,10 @@ function addcatform($parent) {
 		}
 	}
 
+	
 	function browsePages($site_id, $start, $filter, $per_page) {
-		global  $db;
-		$result = pg_query($db, "select url from sites where site_id=$site_id");
-		echo pg_last_error($db);
+
+		$result = pg_query_last_error("select url from sites where site_id=$site_id", __LINE__);
 		$row = pg_fetch_row($result);
 		$url = $row[0];
 		
@@ -897,20 +848,14 @@ function addcatform($parent) {
 			$query_add = "and url like '%$filter%'";
 		}
 		$linksQuery = "select count(*) from links where site_id = $site_id $query_add";
-		$result = pg_query($db, $linksQuery);
-		echo pg_last_error($db);
+		$result = pg_query_last_error($linksQuery, __LINE__);
 		$row = pg_fetch_row($result);
-		$numOfPages = $row[0]; 
-
-		$result = pg_query($db, $linksQuery);
-		echo pg_last_error($db);
+		$numOfPages = $row[0];
 		$from = ($start-1) * 10;
 		$to = min(($start)*10, $numOfPages);
 
-		
 		$linksQuery = "select link_id, url from links where site_id = $site_id and url like '%$filter%' order by url limit $from offset $per_page";
-		$result = pg_query($db, $linksQuery);
-		echo pg_last_error($db);
+		$result = pg_query_last_error($linksQuery, __LINE__);
 		?>
 		<div id="submenu"></div>
 		<br/>
@@ -949,14 +894,14 @@ function addcatform($parent) {
 		if ($pages > 0)
 			print "<center>Pages: ";
 
-		$links_to_next =10;
+		$links_to_next = 10;
 		$firstpage = $start - $links_to_next;
 		if ($firstpage < 1) $firstpage = 1;
 		$lastpage = $start + $links_to_next;
 		if ($lastpage > $pages) $lastpage = $pages;
 		
-		for ($x=$firstpage; $x<=$lastpage; $x++)
-			if ($x<>$start)	{
+		for ($x = $firstpage; $x <= $lastpage; $x++)
+			if ($x <> $start)	{
 				print "<a href=admin.php?f=21&site_id=$site_id&start=$x&filter=$filter&per_page=$per_page>$x</a> ";
 			} 	else
 				print "<b>$x </b>";
@@ -966,19 +911,16 @@ function addcatform($parent) {
 
 
 	function cleanForm () {
-		global  $db;
-		$result = pg_query($db, "select count(*) from query_log");
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$log=$row[0];
+		
+		$result = pg_query_last_error("select count(*) from query_log", __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$log = $row[0];
 		}
-		$result = pg_query($db, "select count(*) from temp");
-		echo pg_last_error($db);
-		if ($row=pg_fetch_array($result)) {
-			$temp=$row[0];
+		$result = pg_query_last_error("select count(*) from temp", __LINE__);
+		if ($row = pg_fetch_array($result)) {
+			$temp = $row[0];
 		}
 
-		
 		?>
 		<div id="submenu">
 		</div>
@@ -995,9 +937,9 @@ function addcatform($parent) {
 		<?php 
 	}
 
+	
 	function statisticsForm ($type) {
 		global $log_dir;
-		global $db;
 		?>
 		<div id='submenu'>
 		<ul>
@@ -1012,17 +954,15 @@ function addcatform($parent) {
 		<?php 
 			if ($type == "") {
 				$cachedSumQuery = "select sum(length(fulltxt)) from links";
-				$result=pg_query($db, "select sum(length(fulltxt)) from links");
-				echo pg_last_error($db);
-				if ($row=pg_fetch_array($result)) {
+				$result = pg_query_last_error("select sum(length(fulltxt)) from links", __LINE__);
+				if ($row = pg_fetch_array($result)) {
 					$cachedSumSize = $row[0];
 				}
 				$cachedSumSize = number_format($cachedSumSize / 1024, 2);
 
 				$sitesSizeQuery = "select sum(size) from links";
-				$result=pg_query($db, "$sitesSizeQuery");
-				echo pg_last_error($db);
-				if ($row=pg_fetch_array($result)) {
+				$result = pg_query_last_error("$sitesSizeQuery", __LINE__);
+				if ($row = pg_fetch_array($result)) {
 					$sitesSize = $row[0];
 				}
 				$sitesSize = number_format($sitesSize, 2);
@@ -1038,17 +978,15 @@ function addcatform($parent) {
 				print "</table></td></tr></table></div>";
 			}	
 
-			if ($type=='keywords') {
+			if ($type == 'keywords') {
 				$class = "grey";
 				print "<br/><div align=\"center\"><table cellspacing =\"0\" cellpadding=\"0\" class=\"darkgrey\"><tr><td><table cellpadding=\"3\" cellspacing = \"1\"><tr  class=\"grey\"><td><b>Keyword</b></td><td><b>Occurrences</b></td></tr>";
-				//for ($i=0;$i<=15; $i++) {
-				//	$char = dechex($i);
-					$result=pg_query($db, "select keyword, count(link_keyword.keyword_id) as x from keywords, link_keyword where keywords.keyword_id = link_keyword.keyword_id group by keyword order by x desc limit 30");
-					echo pg_last_error($db);
-					while (($row=pg_fetch_row($result))) {
-						$topwords[$row[0]] = $row[1];
-					}
-				//}
+
+				$result = pg_query_last_error("select keyword, count(link_keyword.keyword_id) as x from keywords, link_keyword where keywords.keyword_id = link_keyword.keyword_id group by keyword order by x desc limit 30", __LINE__);
+				while (($row = pg_fetch_row($result))) {
+					$topwords[$row[0]] = $row[1];
+				}
+				
 				arsort($topwords);
 				$count = 0;
 				while ((list($word, $weight) = each($topwords)) && $count <= 30) {
@@ -1063,7 +1001,7 @@ function addcatform($parent) {
 		 		}			
 				print "</table></td></tr></table></div>";
 			}
-			if ($type=='pages') {
+			if ($type == 'pages') {
 				$class = "grey";
 				?>
 				<br/><div align="center">
@@ -1073,9 +1011,8 @@ function addcatform($parent) {
 				   <b>Page</b></td>
 				   <td><b>Text size</b></td></tr>
 				<?php 
-				$result=pg_query($db, "select links.link_id, url, length(fulltxt)  as x from links order by x desc limit 20");
-				echo pg_last_error($db);
-				while ($row=pg_fetch_row($result)) {
+				$result = pg_query_last_error("select links.link_id, url, length(fulltxt)  as x from links order by x desc limit 20", __LINE__);
+				while ($row = pg_fetch_row($result)) {
 					if ($class =="white") 
 						$class = "grey";
 					else 
@@ -1087,12 +1024,12 @@ function addcatform($parent) {
 				print "</table></td></tr></table></div>";
 			}
 
-			if ($type=='top_searches') {
+			if ($type == 'top_searches') {
 				$class = "grey";
 				print "<br/><div align=\"center\"><table cellspacing =\"0\" cellpadding=\"0\" class=\"darkgrey\"><tr><td><table cellpadding=\"3\" cellspacing = \"1\"><tr  class=\"grey\"><td><b>Query</b></td><td><b>Count</b></td><td><b> Average results</b></td><td><b>Last queried</b></td></tr>";
-				$result=pg_query($db, "select query, count(*) as c, max(time), avg(results)  from query_log group by query order by c desc");
-				echo pg_last_error($db);
-				while ($row=pg_fetch_row($result)) {
+				
+				$result = pg_query_last_error("select query, count(*) as c, max(time), avg(results)  from query_log group by query order by c desc", __LINE__);
+				while ($row = pg_fetch_row($result)) {
 					if ($class =="white") 
 						$class = "grey";
 					else 
@@ -1106,12 +1043,12 @@ function addcatform($parent) {
 		 		}			
 				print "</table></td></tr></table></div>";
 			}
-			if ($type=='log') {
+			if ($type == 'log') {
 				$class = "grey";
 				print "<br/><div align=\"center\"><table cellspacing =\"0\" cellpadding=\"0\" class=\"darkgrey\"><tr><td><table cellpadding=\"3\" cellspacing = \"1\"><tr  class=\"grey\"><td align=\"center\"><b>Query</b></td><td align=\"center\"><b>Results</b></td><td align=\"center\"><b>Queried at</b></td><td align=\"center\"><b>Time taken</b></td></tr>";
-				$result=pg_query($db, "select query,  time, elapsed, results from query_log order by time desc");
-				echo pg_last_error($db);
-				while ($row=pg_fetch_row($result)) {
+				
+				$result = pg_query_last_error("select query,  time, elapsed, results from query_log order by time desc", __LINE__);
+				while ($row = pg_fetch_row($result)) {
 					if ($class =="white") 
 						$class = "grey";
 					else 
@@ -1126,20 +1063,20 @@ function addcatform($parent) {
 				print "</table></td></tr></table></div>";
 			}
 	
-			if ($type=='spidering_log') {
+			if ($type == 'spidering_log') {
 				$class = "grey";
 				$files = get_dir_contents($log_dir);
-				if (count($files)>0) {
+				if (count($files) > 0) {
 					print "<br/><div align=\"center\"><table cellspacing =\"0\" cellpadding=\"0\" class=\"darkgrey\"><tr><td><table cellpadding=\"3\" cellspacing = \"1\"><tr  class=\"grey\"><td align=\"center\"><b>File</b></td><td align=\"center\"><b>Time</b></td><td align=\"center\"><b></b></td></tr>";
 
-					for ($i=0; $i<count($files); $i++) {
+					for ($i = 0; $i < count($files); $i++) {
 						$file=$files[$i];
-						$year = substr($file, 0,2);
-						$month = substr($file, 2,2);
-						$day = substr($file, 4,2);
-						$hour = substr($file, 6,2);
-						$minute = substr($file, 8,2);
-						if ($class =="white") 
+						$year = substr($file, 0, 2);
+						$month = substr($file, 2, 2);
+						$day = substr($file, 4, 2);
+						$hour = substr($file, 6, 2);
+						$minute = substr($file, 8, 2);
+						if ($class == "white") 
 							$class = "grey";
 						else 
 							$class = "white";
@@ -1154,18 +1091,17 @@ function addcatform($parent) {
 					<?php 
 				}
 			}
-	
 	}
 
+	
 	switch ($f)	{
 		case 1:
 			$message = addsite($url, $title, $short_desc, $cat);
-			$compurl=parse_url($url);
-			if ($compurl['path']=='')
-				$url=$url."/";
+			$compurl = parse_url($url);
+			if ($compurl['path'] == '')
+				$url = $url . "/";
 		 
-			$result = pg_query($db, "select site_id from sites where url='$url'");
-			echo pg_last_error($db);
+			$result = pg_query_last_error("select site_id from sites where url='$url'", __line__);
 			$row = pg_fetch_row($result);
 			if ($site_id != "")
 				siteScreen($site_id, $message);
@@ -1183,41 +1119,41 @@ function addcatform($parent) {
 				$domaincb = 0;
 			if (!isset($cat))
 				$cat = "";
-			if ($soption =='full') {
+			if ($soption == 'full') {
 				$depth = -1;
 			} 
-			$message = editsite ($site_id, $url, $title, $short_desc, $depth, $in, $out,  $domaincb, $cat);
+			$message = editsite($site_id, $url, $title, $short_desc, $depth, $in, $out,  $domaincb, $cat);
 			showsites($message);
 		break;
 		case 5:
-			deletesite ($site_id);
+			deletesite($site_id);
 			showsites();
 		break;
 		case add_cat:
 			if (!isset($parent))
 				$parent = "";
-			addcatform ($parent);
+			addcatform($parent);
 		break;
 		case 7:
 			if (!isset($parent)) {
 				$parent = "";
 			}
-			$message = addcat ($category, $parent);
-			list_cats (0, 0, "white", $message);
+			$message = addcat($category, $parent);
+			list_cats(0, 0, "white", $message);
 		break;
 		case categories:
-			list_cats (0, 0, "white", "");
+			list_cats(0, 0, "white", "");
 		break;
 		case edit_cat;
 			editcatform($cat_id);
 		break;
 		case 10;
-			$message = editcat ($cat_id, $category);
+			$message = editcat($cat_id, $category);
 			list_cats (0, 0, "white", $message);
 		break;
 		case 11;
 			deletecat($cat_id);
-			list_cats (0, 0, "white");
+			list_cats(0, 0, "white");
 		break;
 		case index;
 			if (!isset($url))
@@ -1225,7 +1161,7 @@ function addcatform($parent) {
 			if (!isset($reindex))
 				$reindex = "";
 			if (isset($adv)) {	
-					$_SESSION['index_advanced']=$adv;
+					$_SESSION['index_advanced'] = $adv;
 			}
 			indexscreen($url, $reindex);
 		break;
@@ -1287,10 +1223,10 @@ function addcatform($parent) {
 			header("Location: admin.php");
 		break;
 		case database;
-			include "db_main.php";
+			require_once "db_main.php";
 		break;
 		case settings;
-			include('configset.php');
+			require_once('configset.php');
 		break;
 		case delete_log;
 			unlink($log_dir."/".$file);
@@ -1301,9 +1237,9 @@ function addcatform($parent) {
 		break;
 	}
 	$stats = getStatistics();
-	print "<br/><br/>	<center>Currently in database: ".$stats['sites']." sites, ".$stats['links']." links, ".$stats['categories']." categories and ".$stats['keywords']." keywords.<br/><br/></center>\n";
+	print "<br/><br/> <center>Currently in database: ".$stats['sites']." sites, ".$stats['links']." links, ".$stats['categories']." categories and ".$stats['keywords']." keywords.<br/><br/></center>\n";
+	?>
 
-?>
 </div>
 </div>
 </body>

@@ -49,6 +49,6 @@ if (isset($_POST['user']) && isset($_POST['pass'])) {
 
 
 $settings_dir = "../settings";
-include "$settings_dir/database.php";
+require_once "$settings_dir/database.php";
 
 ?>

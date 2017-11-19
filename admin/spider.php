@@ -207,7 +207,7 @@
 			} else {
 				$fl = @fopen($url, "r");
 				if ($fl) {
-					while ($buffer = @fgets($fl, 4096)) {
+					while ($buffer = @fgets($fl, 4096*2)) {
 						$file .= $buffer;
 					}
 				} else {
@@ -430,13 +430,6 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 				$all_keywords[] = $row[1];
 			}
 		}
-		
-		echo 'ALL KEYWORDS' . '<br>';
-		foreach ($all_keywords as $item) {
-			//echo $item . '<br>';
-			echo $item . '<br>';
-		}
-		echo 'DONE ALL KEYWORDS' . '<br>';
 		
 		
 		$compurl = parse_url($url);

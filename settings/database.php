@@ -12,6 +12,14 @@
 	else {
 		; //echo 'postgres CONNECT SUCCESS' . '<br>';
 	}
-	
 
+	function pg_query_last_error($sql, $message) {
+		global $db;
+		
+		$res = pg_query($db, $sql) or trigger_error("Query Failed! SQL: $sql - Msg:".$message.' Error:'.pg_last_error($db) , E_USER_ERROR);
+		return $res;
+	}
+
+	
+	
 ?>

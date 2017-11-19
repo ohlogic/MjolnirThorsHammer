@@ -100,7 +100,7 @@ function url_status($url) {
 		$target = $host;
 	}
 
-	$fsocket_timeout = 30;
+	$fsocket_timeout = 10;
 	$errno = 0;
 	$errstr = "";
 	$fp = fsockopen($target, $port, $errno, $errstr, $fsocket_timeout);
@@ -109,9 +109,9 @@ function url_status($url) {
 	if (!$fp) {
 		$status['state'] = "NOHOST";
 	} else {
-		socket_set_timeout($fp, 30);
+		socket_set_timeout($fp, 10);
 		fputs($fp, $request);
-		$answer = fgets($fp, 4096);
+		$answer = fgets($fp, 4096*2);
 		$regs = Array ();
 		if (preg_match("/HTTP/[0-9.]+ (([0-9])[0-9]{2})/", $answer, $regs)) {
 			$httpcode = $regs[2];
@@ -125,7 +125,7 @@ function url_status($url) {
 
 		if ($linkstate <> "Unreachable") {
 			while ($answer) {
-				$answer = fgets($fp, 4096);
+				$answer = fgets($fp, 4096*2);
 
 				if (preg_match("/Location: *([^\n\r ]+)/", $answer, $regs) && $httpcode == 3 && $full_httpcode != 302) {
 					$status['path'] = $regs[1];
