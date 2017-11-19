@@ -1,6 +1,7 @@
 <?php 
 function getFileContents($url) {
 	global $user_agent;
+	
 	$urlparts = parse_url($url);
 	$path = $urlparts['path'];
 	$host = $urlparts['host'];
@@ -69,6 +70,7 @@ check if file is available and in readable form
 */
 function url_status($url) {
 	global $user_agent, $index_pdf, $index_doc, $index_xls, $index_ppt;
+	
 	$urlparts = parse_url($url);
 	$path = $urlparts['path'];
 	$host = $urlparts['host'];
@@ -183,6 +185,7 @@ Read robots.txt file in the server, to find any disallowed files/folders
 */
 function check_robot_txt($url) {
 	global $user_agent;
+	
 	$urlparts = parse_url($url);
 	$url = 'http://'.$urlparts['host']."/robots.txt";
 
@@ -352,7 +355,7 @@ function url_purify($url, $parent_url, $can_leave_domain) {
 		return str_replace( '"', "&#34;",    str_replace("'", "&apos;", $url )	);							
 	}											
 	
-	$urlparts = parse_url( 	addcslashes(	 str_replace( '"', "&#34;",    str_replace("'", "&apos;", $url )	)	)	);
+	$urlparts = parse_url( 	pg_escape_string(	 str_replace( '"', "&#34;",    str_replace("'", "&apos;", $url )	)	)	);
 	
 	$main_url_parts = parse_url($mainurl);
 	if ($urlparts['host'] != "" && $urlparts['host'] != $main_url_parts['host']  && $can_leave_domain != 1) {
@@ -447,7 +450,7 @@ function url_purify($url, $parent_url, $can_leave_domain) {
 
 function save_keywords($wordarray, $link_id, $domain) {
 	global $all_keywords;
-	global $db;
+	
 	reset($wordarray);
 	
 	foreach($wordarray as $item) {
@@ -457,26 +460,24 @@ function save_keywords($wordarray, $link_id, $domain) {
 		if (strlen($word)<= 30) {
 			
 			if (!in_array($word, $all_keywords)) {
-				$result = pg_query($db, "insert into keywords (keyword) values ('$word') RETURNING keyword_id");
+				$result = pg_query_last_error("insert into keywords (keyword) values ('$word') RETURNING keyword_id", __LINE__);
 				$insert_row = pg_fetch_row($result);
 				$keyword_id = $insert_row[0];
 				
 				$all_keywords[] = $word;
 				
-				$sql = "insert into link_keyword (link_id, keyword_id, weight, domain) values ($link_id, $keyword_id, $weight, $domain)";
-				pg_query($db, $sql);
-				echo pg_last_error($db);
-				
+				pg_query_last_error("insert into link_keyword (link_id, keyword_id, weight, domain) values ($link_id, $keyword_id, $weight, $domain)", __LINE__);		
 			}
 			else {
 				echo 'already have the keyword='. $word . '<br>';
 			}
 		}
 	}
-	
 }
 
+
 function get_head_data($file) {
+	
 	$headdata = "";
            
 	preg_match("@<head[^>]*>(.*?)<\/head>@si",$file, $regs);	
@@ -520,14 +521,15 @@ function get_head_data($file) {
 				$nofollow = 1;
 			}
 		}
-		$data['description'] = addslashes($description);
-		$data['keywords'] = addslashes($keywords);
+		$data['description'] = pg_escape_string($description);
+		$data['keywords'] = pg_escape_string($keywords);
 		$data['nofollow'] = $nofollow;
 		$data['noindex'] = $noindex;
 		$data['base'] = $base;
 	}
 	return $data;
 }
+
 
 function clean_file($file, $url, $type) {
 	global $entities, $index_host, $index_meta_keywords;
@@ -545,7 +547,8 @@ function clean_file($file, $url, $type) {
 	if (preg_match("@<title *>(.*?)<\/title*>@si", $file, $regs)) {
 		$title = trim($regs[1]);
 		$file = str_replace($regs[0], "", $file);
-	} else if ($type == 'pdf' || $type == 'doc') { //the title of a non-html file is its first few words
+	} 
+	else if ($type == 'pdf' || $type == 'doc') { //the title of a non-html file is its first few words
 		$title = substr($file, 0, strrpos(substr($file, 0, 40), " "));
 	}
 
@@ -577,9 +580,9 @@ function clean_file($file, $url, $type) {
 	$file = preg_replace("/&[a-z]{1,6};/", " ", $file);
 	$file = preg_replace("/[\*\^\+\?\\\.\[\]\^\$\|\{\)\(\}~!\"\/@#£$%&=`´;><:,]+/", " ", $file);
 	$file = preg_replace("/\s+/", " ", $file);
-	$data['fulltext'] = addslashes($fulltext);
-	$data['content'] = addslashes($file);
-	$data['title'] = addslashes($title);
+	$data['fulltext'] = pg_escape_string($fulltext);
+	$data['content'] = pg_escape_string($file);
+	$data['title'] = pg_escape_string($title);
 	$data['description'] = $headdata['description'];
 	$data['keywords'] = $headdata['keywords'];
 	$data['host'] = $host;
@@ -589,11 +592,12 @@ function clean_file($file, $url, $type) {
 	$data['base'] = $headdata['base'];
 
 	return $data;
-
 }
+
 
 function calc_weights($wordarray, $title, $host, $path, $keywords, $desc) {
 	global $index_host, $index_meta_keywords;
+	
 	$hostarray = unique_array(explode(" ", preg_replace("/[^[:alnum:]-]+/i", " ", strtolower($host))));
 	$patharray = unique_array(explode(" ", preg_replace("/[^[:alnum:]-]+/i", " ", strtolower($path))));
 	$titlearray = unique_array(explode(" ", preg_replace("/[^[:alnum:]-]+/i", " ", strtolower($title))));
@@ -698,13 +702,14 @@ function calc_weights($wordarray, $title, $host, $path, $keywords, $desc) {
 		$www[] = array($item[0], $item[1]);
 	}	
 		
-		
 	return $www;
 }
+
 
 //function to calculate the weight of pages
 function calc_weight ($words_in_page, $word_in_title, $word_in_domain, $word_in_path, $path_depth, $meta_keyword) {
 	global $title_weight, $domain_weight, $path_weight, $meta_weight;
+	
 	$weight = ($words_in_page + $word_in_title * $title_weight +
 			  $word_in_domain * $domain_weight +
 			  $word_in_path * $path_weight + $meta_keyword * $meta_weight) *10 / (0.8 +0.2*$path_depth);
@@ -712,17 +717,19 @@ function calc_weight ($words_in_page, $word_in_title, $word_in_domain, $word_in_
 	return $weight;
 }
 
+
 function isDuplicateMD5($md5sum) {
-	global $db;
-	$result = pg_query($db, "select link_id from links where md5sum='$md5sum'");
-	echo pg_last_error($db);
+	
+	$result = pg_query_last_error("select link_id from links where md5sum='$md5sum'", __LINE__);
 	if (pg_num_rows($result) > 0) {
 		return true;
 	}
 	return false;
 }
 
+
 function check_include($link, $inc, $not_inc) {
+	
 	$url_inc = Array ();
 	$url_not_inc = Array ();
 	if ($inc != "") {
@@ -772,37 +779,37 @@ function check_include($link, $inc, $not_inc) {
 	return $include;
 }
 
+
 function check_for_removal($url) {
-	global $db;
 	global $command_line;
-	$result = mysqli_query($db, "select link_id, visible from links"." where url='$url'");
-	echo mysqli_error();
-	if (mysqli_num_rows($result) > 0) {
-		$row = mysqli_fetch_row($result);
+	
+	$result = pg_query_last_error("select link_id, visible from links"." where url='$url'", __LINE__);
+	if (pg_num_rows($result) > 0) {
+		$row = pg_fetch_row($result);
 		$link_id = $row[0];
 		$visible = $row[1];
 		if ($visible > 0) {
 			$visible --;
-			mysqli_query($db, "update links set visible=$visible where link_id=$link_id");
-			echo mysqli_error();
+			
+			pg_query_last_error("update links set visible=$visible where link_id=$link_id", __LINE__);
 		} else {
-			mysqli_query($db, "delete from links where link_id=$link_id");
-			echo mysqli_error();
-			//for ($i=0;$i<=15; $i++) {
-			//	$char = dechex($i);
-				mysqli_query("delete from link_keyword where link_id=$link_id");
-				echo mysqli_error();
-			//}
+			
+			pg_query_last_error("delete from links where link_id=$link_id", __LINE__);
+
+			pg_query_last_error("delete from link_keyword where link_id=$link_id", __LINE__);
+
 			printStandardReport('pageRemoved',$command_line);
 		}
 	}
 }
+
 
 function convert_url($url) {
 	$url = str_replace("&amp;", "&", $url);
 	$url = str_replace(" ", "%20", $url);
 	return $url;
 }
+
 
 function extract_text($contents, $source_type) {
 	global $tmp_dir, $pdftotext_path, $catdoc_path, $xls2csv_path, $catppt_path;
@@ -834,8 +841,8 @@ function extract_text($contents, $source_type) {
 
 	unlink ($filename);
 	return implode(' ', $result); 
-
 }
+
 
 function  remove_sessid($url) {
 		return preg_replace("/(\?|&)(PHPSESSID|JSESSIONID|ASPSESSIONID|sid)=[0-9a-zA-Z]+$/", "", $url);

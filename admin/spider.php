@@ -104,9 +104,8 @@
 	} else {
 
 		if ($reindex == 1 && $command_line == 1) {
-			$result=mysqli_query($db, "select url, spider_depth, required, disallowed, can_leave_domain from sites where url='$url'");
-			echo mysqli_error($db);
-			if($row=mysqli_fetch_row($result)) {
+			$result = pg_query_last_error("select url, spider_depth, required, disallowed, can_leave_domain from sites where url='$url'", __LINE__);
+			if($row = pg_fetch_row($result)) {
 				$url = $row[0];
 				$maxlevel = $row[1];
 				$in= $row[2];
@@ -149,7 +148,6 @@
 		global $min_words_per_page;
 		global $supdomain;
 		global $user_agent, $tmp_urls, $delay_time, $domain_arr;
-		global $db;
 		
 		$needsReindex = 1;
 		$deletable = 0;
@@ -163,12 +161,10 @@
 			$url = preg_replace("/ /", "", url_purify($url_status['path'], $url, $can_leave_domain));
 
 			if ($url <> '') {
-				$result = pg_query($db, "select link from temp where link='$url' && id = '$sessid'");
-				echo pg_last_error($db);
+				$result = pg_query_last_error("select link from temp where link='$url' && id = '$sessid'", __LINE__);
 				$rows = pg_num_rows($result);
 				if ($rows == 0) {
-					pg_query($db, "insert into temp (link, level, id) values ('$url', '$level', '$sessid')");
-					echo pg_last_error($db);
+					pg_query_last_error("insert into temp (link, level, id) values ('$url', '$level', '$sessid')", __LINE__);
 				}
 			}
 
@@ -177,16 +173,12 @@
 		// untested relocation code
 
 		
-		
-		
 		if ($indexdate <> '' && $url_status['date'] <> '') {
 			if ($indexdate > $url_status['date']) {
 				$url_status['state'] = "Date checked. Page contents not changed";
 				$needsReindex = 0;
 			}
 		}
-		
-		
 		
 		// get file with spider agent or whatever its being called in the settings
 		ini_set("user_agent", $user_agent);
@@ -221,7 +213,6 @@
 				$file = $contents['file'];
 			}
 			
-
 			$pageSize = number_format(strlen($file)/1024, 2, ".", "");
 			printPageSizeReport($pageSize);
 
@@ -231,10 +222,7 @@
 
 			printStandardReport('starting', $command_line);
 		
-
 			$newmd5sum = md5($file);
-			
-echo 'what is the md5 file' . $newmd5sum . '<br>';
 
 			if ($md5sum == $newmd5sum) {
 				printStandardReport('md5notChanged',$command_line);
@@ -305,16 +293,11 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 						foreach($links as $item) {
 
 								echo  $item . '<br>';
-								//echo 'THERE' . $item . '<br>';
 								$numoflinks++;
 
 								$item = pg_escape_string($item);
 
-								$sql = "INSERT INTO temp (link, level, id) VALUES ('$item', '$level', '$sessid');";
-								//echo 'SQL:' . $sql . '<br>';
-
-								pg_query($db, $sql ) or trigger_error("Query Failed! SQL: $sql - Error: ".pg_last_error($db), E_USER_ERROR);
-								echo pg_last_error($db);
+								pg_query_last_error("INSERT INTO temp (link, level, id) VALUES ('$item', '$level', '$sessid');", __LINE__);
 						}
 						
 					}
@@ -335,8 +318,7 @@ echo 'what is the md5 file' . $newmd5sum . '<br>';
 					if (isset($domain_arr[$domain_for_db])) {
 						$dom_id = $domain_arr[$domain_for_db];
 					} else {
-						$result = pg_query($db, "insert into domains (domain) values ('$domain_for_db')  RETURNING domain_id");
-						echo pg_last_error($db);
+						$result = pg_query_last_error("insert into domains (domain) values ('$domain_for_db')  RETURNING domain_id", __LINE__);
 						
 						$insert_row = pg_fetch_row($result);
 						$dom_id = $insert_row[0];
@@ -364,31 +346,26 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 					if (is_array($wordarray) && count($wordarray) >= $min_words_per_page) {
 						
 						if ($md5sum == '') {
-							pg_query($db, "insert into links (site_id, url, title, description, fulltxt, indexdate, size, md5sum, level) values ('$site_id', '$url', '$title', '$desc', '$fulltxt', CURRENT_TIMESTAMP, '$pageSize', '$newmd5sum', $thislevel)");
-							echo pg_last_error($db);
-							$result = pg_query($db, "select link_id from links where url='$url'");
-							echo pg_last_error($db);
+							pg_query_last_error("insert into links (site_id, url, title, description, fulltxt, indexdate, size, md5sum, level) values ('$site_id', '$url', '$title', '$desc', '$fulltxt', CURRENT_TIMESTAMP, '$pageSize', '$newmd5sum', $thislevel)", __LINE__);
+							$result = pg_query_last_error("select link_id from links where url='$url'", __LINE__);
 							$row = pg_fetch_row($result);
 							$link_id = $row[0];
 							
 							save_keywords($wordarray, $link_id, $dom_id);
 							
 							printStandardReport('indexed', $command_line);
-						}else if (($md5sum <> '') && ($md5sum <> $newmd5sum)) { //if page has changed, start updating
+						}
+						else if (($md5sum <> '') && ($md5sum <> $newmd5sum)) { //if page has changed, start updating
 
-							$result = pg_query($db, "select link_id from links where url='$url'");
-							echo pg_last_error($db);
+							$result = pg_query_last_error("select link_id from links where url='$url'", __LINE__);
 							$row = pg_fetch_row($result);
 							$link_id = $row[0];
-							//for ($i=0;$i<=15; $i++) {
-							//	$char = dechex($i);
-								pg_query($db, "delete from link_keyword where link_id=$link_id");
-								echo pg_last_error($db);
-							//}
+
+							pg_query_last_error("delete from link_keyword where link_id=$link_id", __LINE__);
+
 							save_keywords($wordarray, $link_id, $dom_id);
-							$query = "update links set title='$title', description ='$desc', fulltxt = '$fulltxt', indexdate=now(), size = '$pageSize', md5sum='$newmd5sum', level=$thislevel where link_id=$link_id";
-							pg_query($db, $query);
-							echo pg_last_error($db);
+							pg_query_last_error("update links set title='$title', description ='$desc', fulltxt = '$fulltxt', indexdate=now(), size = '$pageSize', md5sum='$newmd5sum', level=$thislevel where link_id=$link_id", __LINE__);
+							
 							printStandardReport('re-indexed', $command_line);
 						}
 					}else {
@@ -419,18 +396,13 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 
 	function index_site($url, $reindex, $maxlevel, $soption, $url_inc, $url_not_inc, $can_leave_domain) {
 		global $command_line, $mainurl,  $tmp_urls, $domain_arr, $all_keywords;
-		global $db;
-		
 		
 		if (!isset($all_keywords)) {
-			$result = pg_query($db, "select keyword_ID, keyword from keywords");
-			echo pg_last_error($db);
-			while($row=pg_fetch_array($result)) {
-				//$all_keywords[addslashes($row[1])] = $row[0];
+			$result = pg_query_last_error("select keyword_ID, keyword from keywords", __LINE__);
+			while($row = pg_fetch_array($result)) {
 				$all_keywords[] = $row[1];
 			}
 		}
-		
 		
 		$compurl = parse_url($url);
 		if ($compurl['path'] == '')
@@ -440,66 +412,61 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 		$a =  getenv("REMOTE_ADDR");
 		$sessid = md5 ($t.$a);
 	
-	
 		$urlparts = parse_url($url);
 	
 		$domain = $urlparts['host'];
 		if (isset($urlparts['port'])) {
 			$port = (int)$urlparts['port'];
-		}else {
+		}
+		else {
 			$port = 80;
 		}
-
-		
 	
-		$result = pg_query($db, "select site_id from sites where url='$url'");
-		echo pg_last_error($db);
+		$result = pg_query_last_error("select site_id from sites where url='$url'", __LINE__);
 		$row = pg_fetch_row($result);
 		$site_id = $row[0];
 		
 		if ($site_id != "" && $reindex == 1) {
-			pg_query($db, "insert into temp (link, level, id) values ('$url', 0, '$sessid')");
-			echo pg_last_error($db);
-			$result = pg_query($db, "select url, level from links where site_id = $site_id");
+			
+			pg_query_last_error("insert into temp (link, level, id) values ('$url', 0, '$sessid')", __LINE__);
+			
+			$result = pg_query_last_error("select url, level from links where site_id = $site_id", __LINE__);
 			while ($row = pg_fetch_array($result)) {
 				$site_link = $row['url'];
 				$link_level = $row['level'];
 				if ($site_link != $url) {
-					pg_query($db, "insert into temp (link, level, id) values ('$site_link', $link_level, '$sessid')");
+					pg_query_last_error("insert into temp (link, level, id) values ('$site_link', $link_level, '$sessid')", __LINE__);
 				}
 			}
 			
-			$qry = "update sites set indexdate=now(), spider_depth = $maxlevel, required = '$url_inc'," .
-					"disallowed = '$url_not_inc', can_leave_domain=$can_leave_domain where site_id=$site_id";
-			pg_query($db, $qry);
-			echo pg_last_error($db);
-		} else if ($site_id == '') {
-			pg_query($db, "insert into sites (url, indexdate, spider_depth, required, disallowed, can_leave_domain) " .
-					"values ('$url', now(), $maxlevel, '$url_inc', '$url_not_inc', $can_leave_domain)");
-			echo pg_last_error($db);
-			$result = pg_query($db, "select site_ID from sites where url='$url'");
+			pg_query_last_error("update sites set indexdate=now(), spider_depth = $maxlevel, required = '$url_inc'," .
+					"disallowed = '$url_not_inc', can_leave_domain=$can_leave_domain where site_id=$site_id", __LINE__);
+			
+		} 
+		else if ($site_id == '') {
+			pg_query_last_error("insert into sites (url, indexdate, spider_depth, required, disallowed, can_leave_domain) " .
+					"values ('$url', now(), $maxlevel, '$url_inc', '$url_not_inc', $can_leave_domain)", __LINE__);
+
+			$result = pg_query_last_error("select site_ID from sites where url='$url'", __LINE__);
 			$row = pg_fetch_row($result);
 			$site_id = $row[0];
-		} else {
-			pg_query($db, "update sites set indexdate=now(), spider_depth = $maxlevel, required = '$url_inc'," .
-					"disallowed = '$url_not_inc', can_leave_domain=$can_leave_domain where site_id=$site_id");
-			echo pg_last_error($db);
+		} 
+		else {
+			pg_query_last_error("update sites set indexdate=now(), spider_depth = $maxlevel, required = '$url_inc'," .
+					"disallowed = '$url_not_inc', can_leave_domain=$can_leave_domain where site_id=$site_id", __LINE__);
 		}
 	
 	
-		$result =pg_query($db, "select site_id, temp_id, level, count, num from pending where site_id='$site_id'");
-		echo pg_last_error($db);
+		$result = pg_query_last_error("select site_id, temp_id, level, count, num from pending where site_id='$site_id'", __LINE__);
 		$row = pg_fetch_row($result);
 		$pending = $row[0];
 		$level = 0;
 		$domain_arr = get_domains();
 		if ($pending == '') {
-			pg_query($db, "insert into temp (link, level, id) values ('$url', 0, '$sessid')");
-			echo pg_last_error($db);
+			pg_query_last_error("insert into temp (link, level, id) values ('$url', 0, '$sessid')", __LINE__);
 		} else if ($pending != '') {
 			printStandardReport('continueSuspended',$command_line);
-			pg_query($db, "select temp_id, level, count from pending where site_id='$site_id'");
-			echo pg_last_error($db);
+			pg_query_last_error("select temp_id, level, count from pending where site_id='$site_id'", __LINE__);
 			$sessid = $row[1];
 			$level = $row[2];
 			$pend_count = $row[3] + 1;
@@ -509,18 +476,14 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 		}
 	
 		if ($reindex != 1) {
-			pg_query($db, "insert into pending (site_id, temp_id, level, count) values ('$site_id', '$sessid', '0', '0')");
-			echo pg_last_error($db);
+			pg_query_last_error("insert into pending (site_id, temp_id, level, count) values ('$site_id', '$sessid', '0', '0')", __LINE__);
 		}
 	
-	
 		$time = time();
-	
 	
 		$omit = check_robot_txt($url);
 	
 		printHeader ($omit, $url, $command_line);
-	
 	
 		$mainurl = $url;
 		$num = 0;
@@ -534,8 +497,7 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 	
 			$links = array();
 	
-			$result = pg_query($db, "select distinct link from temp where level=$level AND id='$sessid' order by link");
-			echo pg_last_error($db);
+			$result = pg_query_last_error("select distinct link from temp where level=$level AND id='$sessid' order by link", __LINE__);
 			$rows = pg_num_rows($result);
 	
 			if ($rows == 0) {
@@ -583,46 +545,39 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 	
 				if ($forbidden == 0) {
 					printRetrieving($num, $thislink, $command_line);
-					$query = "select md5sum, indexdate from links where url='$thislink'";
-					$result = pg_query($db, $query);
-					echo pg_last_error($db);
+					
+					$result = pg_query_last_error("select md5sum, indexdate from links where url='$thislink'", __LINE__);
 					$rows = pg_num_rows($result);
 					if ($rows == 0) {
 						index_url($thislink, $level+1, $site_id, '',  $domain, '', $sessid, $can_leave_domain, $reindex);
 
-						pg_query($db, "update pending set level = $level, count=$count, num=$num where site_id=$site_id");
-						echo pg_last_error($db);
+						pg_query_last_error("update pending set level = $level, count=$count, num=$num where site_id=$site_id", __LINE__);
 					}else if ($rows <> 0 && $reindex == 1) {
 						$row = pg_fetch_array($result);
 						$md5sum = $row['md5sum'];
 						$indexdate = $row['indexdate'];
 						index_url($thislink, $level+1, $site_id, $md5sum,  $domain, $indexdate, $sessid, $can_leave_domain, $reindex);
-						pg_query($db, "update pending set level = $level, count=$count, num=$num where site_id=$site_id");
-						echo pg_last_error($db);
+						pg_query_last_error("update pending set level = $level, count=$count, num=$num where site_id=$site_id", __LINE__);
 					}else {
 						printStandardReport('inDatabase',$command_line);
 					}
-
-				}
+				}	
 				$count++;
 			}
 			$level++;
 		}
 	
-		pg_query($db, "delete from temp where id = '$sessid'");
-		echo pg_last_error($db);
-		pg_query($db, "delete from pending where site_id = '$site_id'");
-		echo pg_last_error($db);
+		pg_query_last_error("delete from temp where id = '$sessid'", __LINE__);
+		pg_query_last_error("delete from pending where site_id = '$site_id'", __LINE__);
+		
 		printStandardReport('completed',$command_line);
-	
-
 	}
 
+	
 	function index_all() {
-		global $db;
-		$result=pg_query($db, "select url, spider_depth, required, disallowed, can_leave_domain from sites");
-		echo pg_last_error($db);
-    	while ($row=pg_fetch_row($result)) {
+		
+		$result = pg_query_last_error("select url, spider_depth, required, disallowed, can_leave_domain from sites", __LINE__);
+    	while ($row = pg_fetch_row($result)) {
     		$url = $row[0];
 	   		$depth = $row[1];
     		$include = $row[2];
@@ -640,31 +595,30 @@ echo 'COUNT='.count($wordarray).$title. ' '. $host. ' '. $path . ' ' . $data['ke
 		}
 	}			
 
+	
 	function get_temp_urls ($sessid) {
-		global $db;
-		$result = pg_query($db, "select link from temp where id='$sessid'");
-		echo pg_last_error($db);
+
+		$result = pg_query_last_error("select link from temp where id='$sessid'", __LINE__);
 		$tmp_urls = Array();
     	while ($row=pg_fetch_row($result)) {
 			$tmp_urls[$row[0]] = 1;
 		}
 		return $tmp_urls;
-			
 	}
 
+	
 	function get_domains () {
-		global $db;
-		$result = pg_query($db, "select domain_id, domain from domains");
-		echo pg_last_error($db);
+
+		$result = pg_query_last_error("select domain_id, domain from domains", __LINE__);
 		$domains = Array();
     	while ($row=pg_fetch_row($result)) {
 			$domains[$row[1]] = $row[0];
 		}
 		return $domains;
-			
 	}
 
 	function commandline_help() {
+		
 		print "Usage: php spider.php <options>\n\n";
 		print "Options:\n";
 		print " -all\t\t Reindex everything in the database\n";
