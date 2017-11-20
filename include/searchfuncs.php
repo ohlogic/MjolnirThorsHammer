@@ -141,8 +141,7 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 	$show_meta_description, 
 	$merge_site_results, 
 	$stem_words, 
-	$did_you_mean_enabled,
-	$db;
+	$did_you_mean_enabled;
 	
 	$results = array();
 	
@@ -237,12 +236,11 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 	$phrase_words = 0;
 	while ($phrase_words < count($wordarray)) {
 
-		$searchword = addslashes($wordarray[$phrase_words]);
+		$searchword = pg_escape_string($wordarray[$phrase_words]);
 		$query1 = "SELECT link_id, title, url, description from links" . 
 			" WHERE fulltxt ilike '% $searchword%'";
 
-		echo pg_last_error($db);
-		$result = pg_query($db, $query1);
+		$result = pg_query_last_error($query1, __LINE__);
 		$num_rows = pg_num_rows($result);
 		
 		if ($num_rows == 0) {
@@ -256,7 +254,7 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 		echo 'PHRASE SEARCH' . '<br>';
 		while ($row = pg_fetch_assoc($result)) {
 			
-			echo $row['title'].' ' . $row['url'].' '. $row['description'] . '<br>'; 
+			if (DEBUG) echo $row['title'].' ' . $row['url'].' '. $row['description'] . '<br>'; 
 			
 				$details = get_details($row['link_id']);
 				$det = pg_fetch_assoc($details);		
@@ -321,15 +319,14 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 		
 		while (($words < count($wordarray)) ) {
 
-			$searchword = addslashes($wordarray[$words]);
+			$searchword = pg_escape_string($wordarray[$words]);
 
 			$query_select = "SELECT distinct link_id, weight, domain, keyword" . 
 				" FROM link_keyword, keywords" . 
 				" WHERE link_keyword.keyword_id = keywords.keyword_id" . 
 				" AND keyword = '$searchword' ORDER BY weight DESC"; // $domain_qry 
 			
-			$res_begin = pg_query($db, $query_select);	// returns array
-			echo pg_last_error($db);
+			$res_begin = pg_query_last_error($query_select, __LINE__);
 			
 			if ($res_begin == NULL) {
 				echo 'it is NULL' .'<br>';
@@ -376,9 +373,6 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 			if (DEBUG) print_r($arr);
 			
 		
-		
-		
-		
 			if (DEBUG) echo '<br><br>Result:';
 			foreach ($arr as $item) {
 				if (DEBUG) echo '<br>link_id:' . $item . '<br>';
@@ -424,8 +418,8 @@ function search($searchstr, $start, $category, $type, $per_page, $domain) {
 	return $results;
 }
 
+
 function synonym_expansion($searchstr) {
-	global $db;
 	
 	// synonym expansion
 	$arr = array();
@@ -435,8 +429,7 @@ function synonym_expansion($searchstr) {
 		
 		$sql = "SELECT m.synonym FROM synonyms e, synonyms m WHERE m.group_id = e.group_id AND e.synonym = '" . $str . "' and e.root = 1";
 		
-		$res = pg_query($db, $sql);
-		echo pg_last_error($db);
+		$res = pg_query_last_error($sql, __LINE__);
 		
 		if (pg_num_rows($res) > 0) {
 			while ($row = pg_fetch_assoc($res) ){
@@ -503,7 +496,6 @@ function highlight_text($searchstr, $weight, $title, $url, $description, $domain
 	
 	return array($weight, $title, $url, $description, $domain, $fulltxt, $size, $url2);
 }
-
 
 
 function get_search_results($query, $start, $category, $searchtype, $results, $domain) {
@@ -601,15 +593,13 @@ function get_search_results($query, $start, $category, $searchtype, $results, $d
 
 
 function get_details($id) {
-	global $db;
 	
 	$sql = "SELECT link_id, title, url, description, fulltxt, size FROM links where link_id = $id;";
 	
-	$res = pg_query($db, $sql);	// returns array
-	echo pg_last_error($db);
+	$res = pg_query_last_error($sql, __LINE__);
 	
 	if ($res == NULL) {
-		echo 'it is NULL__get_details' .'<br>';
+		echo 'get_details error' .'<br>';
 	} else {
 		$num_rows = pg_num_rows($res);
 		if ($num_rows > 0)
@@ -619,15 +609,13 @@ function get_details($id) {
 
 
 function get_domain($link_id) {
-	global $db;	
 	
 	$sql = "SELECT link_keyword.domain, domains.domain as domain FROM link_keyword, domains WHERE link_keyword.link_id = $link_id and domains.domain_id = link_keyword.domain";
 	
-	$res = pg_query($db, $sql);	// returns array
-	echo pg_last_error($db);
+	$res = pg_query_last_error($sql, __LINE__);
 	
 	if ($res == NULL) {
-		echo 'it is NULL__get_domain' .'<br>';
+		echo 'get_domain error' .'<br>';
 	} else {
 		$num_rows = pg_num_rows($res);
 		if ($num_rows > 0)
